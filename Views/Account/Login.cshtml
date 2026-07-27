@@ -1,0 +1,103 @@
+﻿@model SistemaTickets.Models.LoginViewModel
+@{
+    Layout = null; // No utiliza el layout global para mostrar pantalla completa limpia
+    ViewData["Title"] = "Iniciar Sesión - Admin Dashboard";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <!-- Bootstrap 5 CSS y Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+        }
+
+        .login-card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            background-color: #ffffff;
+        }
+
+        .btn-primary-custom {
+            background-color: #0284c7;
+            border: none;
+        }
+
+            .btn-primary-custom:hover {
+                background-color: #0369a1;
+            }
+    </style>
+</head>
+<body class="d-flex align-items-center justify-content-center">
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+
+                <div class="card login-card p-4 p-sm-5">
+
+                    <!-- Encabezado / Logo -->
+                    <div class="text-center mb-4">
+                        <img src="~/images/ABGLOGO.png" alt="Logo Empresa" class="img-fluid mb-3" style="max-height: 80px; width: auto;" />
+                        <h4 class="fw-bold text-dark m-0">Soporte IT</h4>
+                        <small class="text-muted">Atencion y Sporte de TI</small>
+                    </div>
+
+                    <!-- Formulario de Login -->
+                    <form asp-action="Login" method="post">
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                        <!-- Campo Email -->
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-bold text-secondary">Correo Electrónico</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope-fill"></i></span>
+                                <input asp-for="Email" class="form-control" placeholder="admin@soporte.com" autofocus />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Campo Password -->
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-bold text-secondary">Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-lock-fill"></i></span>
+                                <input asp-for="Password" class="form-control" placeholder="••••••••" />
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Recordar sesión -->
+                        <div class="form-check mb-4">
+                            <input asp-for="RememberMe" class="form-check-input" />
+                            <label asp-for="RememberMe" class="form-check-label text-secondary small">Recordar mi sesión</label>
+                        </div>
+
+                        <!-- Botón Ingresar -->
+                        <button type="submit" class="btn btn-primary-custom btn-lg w-100 fw-bold text-white rounded-pill mb-3">
+                            Ingresar al Sistema
+                        </button>
+
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted" style="font-size: 11px;">Credenciales demo: admin@soporte.com / Admin123*</small>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

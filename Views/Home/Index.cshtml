@@ -1,0 +1,154 @@
+﻿@{
+    ViewData["Title"] = "Detalle Ticket";
+}
+
+<!-- Top Header con Título y Buscador (Modificación 3) -->
+<div class="top-header d-flex justify-content-between align-items-center mb-4">
+    <h4 class="m-0 fw-bold">Ticket #35: Cancelación y retimbrado</h4>
+    <div class="w-25">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control border-0" placeholder="Buscar tickets, usuarios..." />
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Hilo de conversación (Columna Izquierda) -->
+    <div class="col-lg-8">
+        <div class="card-custom p-4">
+            <h5 class="fw-bold mb-4">Hilo de Conversación</h5>
+
+            <!-- Mensaje Usuario -->
+            <div class="d-flex gap-3 mb-4">
+                <img src="~/images/1177568.png" class="avatar-sm" alt="Filomena R." asp-append-version="true"/>
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <strong class="text-dark">Filomena R.</strong>
+                        <small class="text-muted">10:32 AM</small>
+                    </div>
+                    <p class="mt-2 mb-3 text-secondary">
+                        Buenos días a todos !!<br />
+                        El día de mañana me pueden ayudar con el siguiente timbrado por favor.<br />
+                        Semana 29, Catorcena 14.<br />
+                        Saludos y gracias !
+                    </p>
+
+                    <!-- Archivos Adjuntos -->
+                    <div class="bg-light p-3 rounded-3 d-flex gap-3 align-items-center border">
+                        <div class="d-flex align-items-center gap-2 bg-white p-2 rounded border">
+                            <i class="bi bi-file-earmark-image fs-4 text-primary"></i>
+                            <div>
+                                <small class="fw-bold d-block">Captura_timbrado.png</small>
+                                <small class="text-muted">Thumbnail</small>
+                            </div>
+                            <a href="#" class="ms-2 text-dark"><i class="bi bi-download"></i></a>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 bg-white p-2 rounded border">
+                            <i class="bi bi-file-earmark-text fs-4 text-secondary"></i>
+                            <div>
+                                <small class="fw-bold d-block">Log_Error_nomina.txt</small>
+                            </div>
+                            <a href="#" class="ms-2 text-dark"><i class="bi bi-download"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Mensaje Admin (Soporte) -->
+            <div class="d-flex gap-3 my-4 bg-light p-3 rounded-3 border-start border-4 border-primary">
+                <img src="~/images/1177568.png" class="avatar-sm" alt="Leonardo C." asp-append-version="true" />
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <strong class="text-dark">Leonardo C. (Admin)</strong>
+                        <small class="text-muted">10:56 AM</small>
+                    </div>
+                    <p class="mt-2 mb-0 text-secondary">
+                        Buenos días.<br />
+                        Ya se realizó el Timbrado semanal y catorcenal de la empresa Merkle.<br />
+                        Saludos.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Caja para agregar comentarios -->
+            <div class="mt-4 pt-3 border-top">
+                <label class="form-label fw-bold">Add Comment</label>
+                <textarea class="form-control mb-3" rows="3" placeholder="Escribir una nota interna..."></textarea>
+                <div class="d-flex justify-content-between align-items-center">
+                    <button class="btn btn-primary px-4 fw-bold rounded-pill">ENVIAR COMENTARIO</button>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="notaInterna" checked>
+                        <label class="form-check-label fw-bold text-muted" for="notaInterna">Nota Interna</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Lateral Derecho (Dropdown Limpio + Timeline + Colaboradores) -->
+    <div class="col-lg-4">
+
+        <!-- Split Button de Estado Limpio (Modificación 1 y 2) -->
+        <div class="card-custom p-3 mb-4">
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center fw-bold" type="button" data-bs-toggle="dropdown">
+                    <span>ESTADO</span>
+                </button>
+                <ul class="dropdown-menu w-100 p-2 shadow-sm border-0">
+                    <li><a class="dropdown-item rounded mb-1 bg-success text-white fw-bold" href="#"><i class="bi bi-check-lg me-2"></i> Solucionado</a></li>
+                    <li><a class="dropdown-item rounded mb-1 bg-warning text-dark fw-bold" href="#"><i class="bi bi-clock me-2"></i> Pendiente</a></li>
+                    <li><a class="dropdown-item rounded bg-danger text-white fw-bold" href="#"><i class="bi bi-x-lg me-2"></i> Rechazado</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Timeline y Quién está trabajando (Modificación 4) -->
+        <div class="card-custom p-4">
+            <h6 class="fw-bold mb-3">Timeline</h6>
+
+            <!-- Colaboradores trabajando en el ticket -->
+            <div class="mb-4">
+                <small class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 11px;">Quién está trabajando el ticket</small>
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="~/images/1177568.png" class="avatar-sm" alt="Filomena R." asp-append-version="true" />
+                        <span class="small fw-bold">Leonardo C. (Admin)</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="~/images/1177568.png" class="avatar-sm" alt="Filomena R." asp-append-version="true" />
+                        <span class="small text-secondary">María G.</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="~/images/1177568.png" class="avatar-sm" alt="Filomena R." asp-append-version="true" />
+                        <span class="small text-secondary">Carlos M.</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Historial -->
+            <div class="timeline mt-3">
+                <div class="timeline-item">
+                    <small class="fw-bold d-block">Asignado a:</small>
+                    <small class="text-muted">Leonardo Castro (Admin)</small>
+                </div>
+                <div class="timeline-item">
+                    <small class="fw-bold d-block">Ticket Creado</small>
+                    <small class="text-muted">10:32 AM</small>
+                </div>
+                <div class="timeline-item">
+                    <small class="fw-bold d-block">Ticket Asignado</small>
+                    <small class="text-muted">10:46 AM</small>
+                </div>
+                <div class="timeline-item">
+                    <small class="fw-bold d-block text-warning">Estado actualizado a: En Proceso</small>
+                    <small class="text-muted">10:56 AM</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
