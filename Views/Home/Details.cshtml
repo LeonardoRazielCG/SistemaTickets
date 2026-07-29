@@ -1,0 +1,98 @@
+﻿@model SistemaTickets.Models.Ticket
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = $"Gestión de Ticket #{Model.Id}";
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary mb-2">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+            <h3 class="fw-bold m-0">Ticket #@Model.Id - @Model.Titulo</h3>
+            <small class="text-muted">Creado el @Model.FechaCreacion.ToString("f") por <strong>@Model.UsuarioEmail</strong></small>
+        </div>
+        <span class="badge fs-6 bg-@(Model.Estado == "Abierto" ? "danger" : Model.Estado == "En Proceso" ? "warning" : "success")">
+            @Model.Estado
+        </span>
+    </div>
+
+    <div class="row g-4">
+        <!-- Panel Izquierdo: Información y Comentarios -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h5 class="fw-bold mb-3">Descripción de la Solicitud</h5>
+                <p class="text-secondary mb-0">@Model.Descripcion</p>
+            </div>
+
+            <!-- Sección de Comentarios / Timeline -->
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-chat-left-dots me-2"></i>Historial de Respuestas (@Model.Comentarios.Count)</h5>
+
+                <div class="mb-4">
+                    @foreach (var c in Model.Comentarios)
+                    {
+                        <div class="border-start border-3 border-primary ps-3 mb-3 bg-light p-3 rounded-3">
+                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                <strong>@c.Autor</strong>
+                                <span>@c.Fecha.ToString("g")</span>
+                            </div>
+                            <p class="m-0 text-dark">@c.Texto</p>
+                        </div>
+                    }
+                    @if (!Model.Comentarios.Any())
+                    {
+                        <p class="text-muted small">No hay comentarios en este ticket aún.</p>
+                    }
+                </div>
+
+                <!-- Formulario Agregar Comentario -->
+                <form asp-action="AddComment" method="post">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-3">
+                        <textarea name="textoComentario" class="form-control" rows="3" placeholder="Escribe un comentario o actualización técnica..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-send me-1"></i> Responder
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Controles de Gestión (Asignar y Estado) -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h5 class="fw-bold mb-3">Panel de Control</h5>
+
+                <form asp-action="UpdateStatus" method="post">
+                    <input type="hidden" name="id" value="@Model.Id" />
+
+                    <!-- Cambio de Estado -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Estado del Ticket</label>
+                        <select name="nuevoEstado" class="form-select">
+                            <option value="Abierto" selected="@(Model.Estado == "Abierto")">Abierto</option>
+                            <option value="En Proceso" selected="@(Model.Estado == "En Proceso")">En Proceso</option>
+                            <option value="Resuelto" selected="@(Model.Estado == "Resuelto")">Resuelto</option>
+                            <option value="Cerrado" selected="@(Model.Estado == "Cerrado")">Cerrado</option>
+                        </select>
+                    </div>
+
+                    <!-- Asignación / Tomar Ticket -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Asignado a</label>
+                        <input type="text" name="asignadoA" class="form-control" value="@Model.AsignadoA" placeholder="Ej. Leonardo Castro" />
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success fw-bold rounded-pill">
+                            <i class="bi bi-check2-circle me-1"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

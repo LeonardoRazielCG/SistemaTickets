@@ -1,44 +1,45 @@
-﻿@{
+﻿@model SistemaTickets.Models.Ticket
+
+@{
     Layout = "_LayoutUser";
     ViewData["Title"] = "Crear Nuevo Ticket";
 }
-<div class="container py-2">
+
+<div class="container py-3">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-
-            <!-- Encabezado -->
             <div class="mb-4">
                 <h3 class="fw-bold text-dark m-0">Generar Solicitud de Soporte</h3>
-                <p class="text-secondary">Por favor, describe tu problema detalladamente para que el equipo de sistemas pueda ayudarte.</p>
+                <p class="text-secondary">Describe tu problema detalladamente para que el equipo de sistemas pueda ayudarte.</p>
             </div>
 
-            <!-- Tarjeta del Formulario -->
             <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                <form asp-controller="Tickets" asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
 
-                    <!-- Título / Asunto -->
+                    <!-- Título -->
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark">Asunto / Título del Problema <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control form-control-lg" placeholder="Ej. Error al timbrar nómina" required />
+                        <input asp-for="Titulo" class="form-control form-control-lg" placeholder="Ej. Error al timbrar nómina" required />
                     </div>
 
                     <div class="row g-3 mb-3">
                         <!-- Categoría -->
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-dark">Categoría / Área <span class="text-danger">*</span></label>
-                            <select class="form-select" required>
+                            <select asp-for="Categoria" class="form-select" required>
                                 <option value="" selected disabled>Selecciona una opción...</option>
-                                <option value="Sistemas">Tress</option>
-                                <option value="Sistemas">OLIN</option>
-                                <option value="Sistemas">Red / VPN</option>
+                                <option value="Sistemas">Sistemas / ERP</option>
+                                <option value="Nominas">Nóminas y Facturación</option>
+                                <option value="Redes">Internet / Redes</option>
                                 <option value="Hardware">Equipo informático / Impresoras</option>
                             </select>
                         </div>
 
-                        <!-- Urgencia -->
+                        <!-- Urgencia / Prioridad -->
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-dark">Urgencia</label>
-                            <select class="form-select">
+                            <select asp-for="Prioridad" class="form-select">
                                 <option value="Baja">Baja - Puedo seguir trabajando</option>
                                 <option value="Media" selected>Media - Dificulta mi trabajo</option>
                                 <option value="Alta">Alta - Bloqueo total de labores</option>
@@ -49,30 +50,17 @@
                     <!-- Descripción -->
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark">Descripción detallada <span class="text-danger">*</span></label>
-                        <textarea class="form-control" rows="5" placeholder="Escribe aquí los detalles del problema o mensajes de error..." required></textarea>
+                        <textarea asp-for="Descripcion" class="form-control" rows="5" placeholder="Escribe aquí los detalles del problema..." required></textarea>
                     </div>
 
-                    <!-- Archivos Adjuntos -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-dark">Adjuntar Evidencias</label>
-                        <div class="border border-2 border-dashed rounded-3 p-3 text-center bg-light">
-                            <i class="bi bi-cloud-arrow-up fs-2 text-primary d-block mb-1"></i>
-                            <span class="d-block text-secondary small mb-2">Sube imágenes, capturas de pantalla o documentos</span>
-                            <input type="file" class="form-control form-control-sm w-75 mx-auto" multiple />
-                        </div>
-                    </div>
-
-                    <!-- Botones -->
                     <div class="d-flex justify-content-end align-items-center gap-3 pt-3 border-top">
-                        <a href="#" class="btn btn-light px-4 fw-bold">Cancelar</a>
+                        <a asp-action="Index" class="btn btn-light px-4 fw-bold">Cancelar</a>
                         <button type="submit" class="btn btn-primary px-4 py-2 fw-bold rounded-pill">
                             <i class="bi bi-send-fill me-2"></i>Enviar Ticket
                         </button>
                     </div>
-
                 </form>
             </div>
-
         </div>
     </div>
 </div>

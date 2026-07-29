@@ -1,36 +1,21 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SistemaTickets.Data;
 using SistemaTickets.Models;
-
 
 namespace SistemaTickets.Controllers
 {
     [Authorize]
     public class TicketsController : Controller
     {
-        //Esta es una lista estatica para simular la BD temporal
-        private static readonly List<Ticket> _ticketsEnMemoria = new List<Ticket>
-        {
-            new Ticket
-            {
-                Id = 101,
-                Titulo = "Fallo de impresora",
-                Categoria = "Hardware",
-                Prioridad = "Media",
-                Descripcion = "No imprime",
-                Estado = "En Proceso",
-                FechaCreacion = DateTime.Now.AddDays(-1),
-                UsuarioEmail = "Usuario@Cliente.com"
-
-            }
-        };
-
+        // GET: /Tickets/Create
         [HttpGet]
         public IActionResult Create()
         {
-            return View();//Esto debe de mostrar el formulario de Tickets
+            return View();
         }
 
+        // POST: /Tickets/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(Ticket ticket)
@@ -39,28 +24,47 @@ namespace SistemaTickets.Controllers
             {
                 return View(ticket);
             }
-            // Asignar datos automáticos
-            ticket.Id = _ticketsEnMemoria.Count > 0 ? _ticketsEnMemoria.Max(t => t.Id) + 1 : 1001;
+
+            // Obtener el usuario/nombre autenticado actual
+            string usuarioActual = User.Identity?.Name ?? "Usuario Anónimo";
+
+            // Asignar ID dinámico y datos iniciales
+            ticket.Id = TicketRepository.Tickets.Count > 0 ? TicketRepository.Tickets.Max(t => t.Id) + 1 : 101;
             ticket.FechaCreacion = DateTime.Now;
             ticket.Estado = "Abierto";
-            ticket.UsuarioEmail = User.Identity?.Name ?? "usuario@cliente.com";
+            ticket.UsuarioEmail = usuarioActual; // Guardamos exactamente lo que retorna User.Identity.Name
 
-            // Guardar en la lista en memoria
-            _ticketsEnMemoria.Add(ticket);
+            // Guardar en la lista compartida
+            TicketRepository.Tickets.Add(ticket);
 
-            TempData["SuccessMessage"] = "Tu Ticket se creo correctamente";
+            TempData["Success"] = $"¡Ticket #{ticket.Id} enviado correctamente!";
             return RedirectToAction("Index");
         }
+
+        // GET: /Tickets/Index
         [HttpGet]
         public IActionResult Index()
         {
-            //Filtra los tickets pertenecientes al usuario actual
-            var misTickets = _ticketsEnMemoria
-                .Where(t => t.UsuarioEmail == (User.Identity?.Name ?? "Usuario@Cliente.com"))
-                .OrderByDescending(t => t.FechaCreacion)
-                .ToList();
-            return View(misTickets);
-        }
+            string usuarioActual = User.Identity?.Name ?? "Usuario Anónimo";
 
+            // Si es Admin, ve todos los tickets; si es Usuario normal, solo ve los que él creó
+            List<Ticket> ticketsAMostrar;
+
+            if (User.IsInRole("Admin"))
+            {
+                ticketsAMostrar = TicketRepository.Tickets
+                    .OrderByDescending(t => t.FechaCreacion)
+                    .ToList();
+            }
+            else
+            {
+                ticketsAMostrar = TicketRepository.Tickets
+                    .Where(t => t.UsuarioEmail.Equals(usuarioActual, StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(t => t.FechaCreacion)
+                    .ToList();
+            }
+
+            return View(ticketsAMostrar);
+        }
     }
 }

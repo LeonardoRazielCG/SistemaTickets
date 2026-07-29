@@ -1,47 +1,98 @@
-using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using SistemaTickets.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SistemaTickets.Data;
+using SistemaTickets.Models;
 
 namespace SistemaTickets.Controllers
 {
-    [Authorize]// Bloquea el acceso a usuarios no autenticados
+    [Authorize(Roles = "Admin")]
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
+        // GET: Dashboard Admin (Muestra todos los tickets)
         public IActionResult Index()
         {
-            return View();
+            var todosLosTickets = TicketRepository.Tickets
+                .OrderByDescending(t => t.FechaCreacion)
+                .ToList();
+
+            return View(todosLosTickets);
         }
 
-        public IActionResult Privacy()
+        // GET: Detalle y Gestión del Ticket
+        [HttpGet]
+        public IActionResult Details(int id)
         {
-            return View();
+            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == id);
+            if (ticket == null) return NotFound();
+
+            return View(ticket);
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        // POST: Cambiar Estado o Asignación
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateStatus(int id, string nuevoEstado, string asignadoA)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == id);
+            if (ticket != null)
+            {
+                ticket.Estado = nuevoEstado;
+                if (!string.IsNullOrEmpty(asignadoA))
+                {
+                    ticket.AsignadoA = asignadoA;
+                }
+                TempData["Success"] = $"Ticket #{id} actualizado correctamente.";
+            }
+            return RedirectToAction("Details", new { id });
         }
-        // Acción para mostrar la vista del formulario
+
+        // POST: Agregar Comentario
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddComment(int id, string textoComentario)
+        {
+            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == id);
+            if (ticket != null && !string.IsNullOrWhiteSpace(textoComentario))
+            {
+                ticket.Comentarios.Add(new Comentario
+                {
+                    Autor = User.Identity?.Name ?? "Administrador",
+                    Texto = textoComentario,
+                    Fecha = DateTime.Now
+                });
+            }
+            return RedirectToAction("Details", new { id });
+        }
+
+        // GET: /Home/CrearTicket
         [HttpGet]
         public IActionResult CrearTicket()
         {
             return View();
         }
 
-        // (Opcional por ahora) Acción POST para cuando el usuario envíe el formulario
+        // POST: /Home/CrearTicket
         [HttpPost]
-        public IActionResult CrearTicket(dynamic model)
+        [ValidateAntiForgeryToken]
+        public IActionResult CrearTicket(Ticket ticket)
         {
-            // Aquí procesaremos los datos más adelante
+            if (!ModelState.IsValid)
+            {
+                return View(ticket);
+            }
+
+            // Asignar ID dinámico y datos iniciales
+            ticket.Id = TicketRepository.Tickets.Count > 0 ? TicketRepository.Tickets.Max(t => t.Id) + 1 : 101;
+            ticket.FechaCreacion = DateTime.Now;
+            ticket.Estado = "Abierto";
+            ticket.UsuarioEmail = User.Identity?.Name ?? "Administrador";
+
+            // Agregar a la lista compartida
+            TicketRepository.Tickets.Add(ticket);
+
+            TempData["Success"] = $"¡Ticket #{ticket.Id} creado correctamente por el Administrador!";
+
+            // Redirige directamente al Dashboard general del Admin
             return RedirectToAction("Index");
         }
     }
