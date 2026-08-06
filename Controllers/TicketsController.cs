@@ -66,5 +66,52 @@ namespace SistemaTickets.Controllers
 
             return View(ticketsAMostrar);
         }
+
+        // 1. Muestra la pantalla interactiva
+        [HttpGet]
+        public IActionResult StatusTicketUser(int id)
+        {
+            // Buscamos el ticket por ID
+            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == id);
+
+            if (ticket == null)
+            {
+                return NotFound();
+            }
+
+            return View("StatusTicketUser", ticket);
+        }
+
+        // 2. Procesa y guarda el comentario del usuario
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult GuardarComentarioUsuario(int ticketId, string mensaje)
+        {
+            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == ticketId);
+
+            if (ticket != null && !string.IsNullOrWhiteSpace(mensaje))
+            {
+                // Agregamos el nuevo comentario a la lista
+                ticket.Comentarios.Add(new Comentario
+                {
+                    Autor = User.Identity?.Name ?? ticket.UsuarioEmail, // Toma el correo del usuario
+                    Texto = mensaje,
+                    Fecha = DateTime.Now
+                });
+
+                // Si el ticket ya estaba resuelto y el usuario pregunta algo más, vuelve a "En Proceso"
+                if (ticket.Estado == "Resuelto")
+                {
+                    ticket.Estado = "En Proceso";
+                }
+
+                TempData["Mensaje"] = "Tu comentario ha sido enviado al equipo de Sistemas.";
+            }
+
+            // Recargamos la misma vista para mostrar el comentario nuevo en la lista
+            return RedirectToAction("StatusTicketUser", new { id = ticketId });
+        }
+
+
     }
 }

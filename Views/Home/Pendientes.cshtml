@@ -1,0 +1,97 @@
+﻿@model IEnumerable<SistemaTickets.Models.Ticket>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Tickets Pendientes";
+}
+
+
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold m-0 text-dark">Tickets Pendientes</h3>
+            <small class="text-muted"> Solicitudes de usuarios</small>
+        </div>
+        <span class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill">
+            <i class="bi bi-clock-history me-1"></i> @Model.Count() Pendiente(s)
+        </span>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Usuario</th>
+                            <th>Asunto</th>
+                            <th>Categoría</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Asignado A</th>
+                            <th>Fecha</th>
+                            <th class="text-end pe-4">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ticket in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold">#@ticket.Id</td>
+                                <td>
+                                    <span class="d-block fw-semibold text-dark">@ticket.UsuarioEmail</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary">@ticket.Titulo</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@ticket.Categoria</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(ticket.Prioridad == "Alta" ? "danger" : ticket.Prioridad == "Media" ? "warning text-dark" : "secondary")">
+                                        @ticket.Prioridad
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(ticket.Estado == "Abierto" ? "danger" : "warning text-dark")">
+                                        @ticket.Estado
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">@(string.IsNullOrEmpty(ticket.AsignadoA) ? "Sin Asignar" : ticket.AsignadoA)</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">@ticket.FechaCreacion.ToString("g")</small>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a asp-action="Details" asp-route-id="@ticket.Id" class="btn btn-sm btn-primary rounded-pill px-3">
+                                        <i class="bi bi-gear-fill me-1"></i> Gestionar
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center py-5 text-muted">
+                                    <i class="bi bi-check-all fs-1 d-block mb-2 text-success"></i>
+                                    ¡Excelente! No hay tickets pendientes por atender en este momento.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

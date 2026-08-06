@@ -1,154 +1,197 @@
-﻿@{
-    ViewData["Title"] = "Detalle Ticket";
+﻿@model IEnumerable<SistemaTickets.Models.Ticket>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Todos los Tickets";
+
+    // Identificar el ticket seleccionado desde la URL o tomar el primero
+    int? selectedId = Context.Request.Query["selectedId"].ToString() != ""
+        ? int.Parse(Context.Request.Query["selectedId"]!)
+        : Model.FirstOrDefault()?.Id;
+
+    var ticketSeleccionado = Model.FirstOrDefault(t => t.Id == selectedId) ?? Model.FirstOrDefault();
 }
 
-<!-- Top Header con Título y Buscador (Modificación 3) -->
-<div class="top-header d-flex justify-content-between align-items-center mb-4">
-    <h4 class="m-0 fw-bold">Ticket #35: Cancelación y retimbrado</h4>
-    <div class="w-25">
-        <div class="input-group">
-            <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
-            <input type="text" class="form-control border-0" placeholder="Buscar tickets, usuarios..." />
+<div class="container-fluid py-3">
+
+    <!-- FRANJA AZUL SUPERIOR CON EL BUSCADOR INTEGRADO -->
+    <div class="card border-0 shadow-sm rounded-4 bg-primary text-white p-4 mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-lg-7">
+                <span class="badge bg-white text-primary fw-bold text-uppercase px-3 py-1 mb-2 rounded-pill shadow-sm">
+                    <i class="bi bi-shield-check me-1"></i> Panel de Administración
+                </span>
+                <h2 class="fw-bold m-0 text-white">Gestión General de Solicitudes</h2>
+                <p class="text-white-50 m-0 mt-1">Supervisa, asigna y da seguimiento a los tickets ingresados al sistema.</p>
+            </div>
+
+            <div class="col-lg-5">
+                <!-- Buscador integrado dentro de la franja azul -->
+                <div class="input-group shadow-sm rounded-pill overflow-hidden bg-white p-1">
+                    <span class="input-group-text bg-white border-0 ps-3">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" id="ticketSearchInput" onkeyup="filterTickets()" class="form-control border-0 py-2 shadow-none" placeholder="Buscar por asunto, correo o ID..." />
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- SECCIÓN PRINCIPAL: TABLA DE TICKETS + DETALLE DERECHO -->
+    <div class="row g-4">
+        <!-- Listado de Tickets (Lado Izquierdo) -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                <div class="card-header bg-white border-0 pt-3 px-4">
+                    <h5 class="fw-bold m-0 text-dark">Listado de Solicitudes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="ticketsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">ID</th>
+                                    <th>Asunto</th>
+                                    <th>Estatus</th>
+                                    <th>Encargado</th>
+                                    <th class="text-end pe-4">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var ticket in Model)
+                                {
+                                    bool isSelected = ticketSeleccionado != null && ticket.Id == ticketSeleccionado.Id;
+                                    <tr class="ticket-row @(isSelected ? "table-active border-start border-4 border-primary" : "")" style="cursor: pointer;" onclick="window.location.href='?selectedId=@ticket.Id'">
+                                        <td class="ps-4 fw-bold">#@ticket.Id</td>
+                                        <td>
+                                            <span class="fw-bold text-dark d-block">@ticket.Titulo</span>
+                                            <small class="text-muted">@ticket.UsuarioEmail</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-@(ticket.Estado == "Abierto" ? "danger" : ticket.Estado == "En Proceso" ? "warning text-dark" : "success")">
+                                                @ticket.Estado
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-secondary fw-semibold">
+                                                <i class="bi bi-person-badge me-1"></i>@(string.IsNullOrEmpty(ticket.AsignadoA) ? "Sin Asignar" : ticket.AsignadoA)
+                                            </small>
+                                        </td>
+                                        <td class="text-end pe-4" onclick="event.stopPropagation();">
+                                            @if (ticket.Estado != "Resuelto" && ticket.Estado != "Cerrado")
+                                            {
+                                                <form asp-action="MarkAsResolved" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@ticket.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2" title="Marcar como Solucionado">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            <a asp-action="Details" asp-route-id="@ticket.Id" class="btn btn-sm btn-light border rounded-pill px-2">
+                                                <i class="bi bi-chevron-right"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (!Model.Any())
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">No hay tickets registrados.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista Previa / Detalle Rápido con Franja Azul Inferior (Lado Derecho) -->
+        <div class="col-lg-5">
+            @if (ticketSeleccionado != null)
+            {
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white h-100 d-flex flex-column justify-content-between">
+                    <div class="p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge bg-light text-dark border">@ticketSeleccionado.Categoria</span>
+                            <span class="badge bg-@(ticketSeleccionado.Estado == "Abierto" ? "danger" : ticketSeleccionado.Estado == "En Proceso" ? "warning text-dark" : "success")">
+                                @ticketSeleccionado.Estado
+                            </span>
+                        </div>
+
+                        <h4 class="fw-bold text-dark mb-1">#@ticketSeleccionado.Id - @ticketSeleccionado.Titulo</h4>
+                        <p class="text-muted small mb-3">Solicitado por: <strong>@ticketSeleccionado.UsuarioEmail</strong></p>
+
+                        <div class="bg-light p-3 rounded-3 mb-4">
+                            <h6 class="fw-bold small text-muted text-uppercase mb-2">Descripción del problema</h6>
+                            <p class="m-0 text-secondary" style="white-space: pre-line;">@ticketSeleccionado.Descripcion</p>
+                        </div>
+
+                        <!-- Métricas Rápidas: Asignación y Colaboradores -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="border rounded-3 p-2 text-center bg-light">
+                                    <small class="text-muted d-block">Encargado actual</small>
+                                    <strong class="text-dark small">@(string.IsNullOrEmpty(ticketSeleccionado.AsignadoA) ? "Sin Asignar" : ticketSeleccionado.AsignadoA)</strong>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded-3 p-2 text-center bg-light">
+                                    <small class="text-muted d-block">Colaboradores / Respuestas</small>
+                                    <strong class="text-dark small">@ticketSeleccionado.Comentarios.Select(c => c.Autor).Distinct().Count() Participante(s)</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FRANJA AZUL INFERIOR DEL TICKET SELECCIONADO -->
+                    <div class="bg-primary text-white p-3 d-flex align-items-center justify-content-between">
+                        <div class="text-truncate me-2">
+                            <small class="d-block text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">Ticket Seleccionado</small>
+                            <span class="fw-bold text-white text-truncate d-block">#@ticketSeleccionado.Id: @ticketSeleccionado.Titulo</span>
+                        </div>
+                        <a asp-action="Details" asp-route-id="@ticketSeleccionado.Id" class="btn btn-light text-primary btn-sm rounded-pill fw-bold text-nowrap px-3 shadow-sm">
+                            Gestionar <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted bg-white">
+                    <i class="bi bi-ticket-perforated fs-1 mb-2 text-secondary"></i>
+                    <p class="m-0">Selecciona un ticket de la lista para ver sus detalles.</p>
+                </div>
+            }
         </div>
     </div>
 </div>
 
-<div class="row g-4">
-    <!-- Hilo de conversación (Columna Izquierda) -->
-    <div class="col-lg-8">
-        <div class="card-custom p-4">
-            <h5 class="fw-bold mb-4">Hilo de Conversación</h5>
+<!-- Script del Buscador en tiempo real -->
+<script>
+    function filterTickets() {
+        var input = document.getElementById("ticketSearchInput");
+        var filter = input.value.toLowerCase();
+        var table = document.getElementById("ticketsTable");
+        var tr = table.getElementsByTagName("tr");
 
-            <!-- Mensaje Usuario -->
-            <div class="d-flex gap-3 mb-4">
-                <img src="~/images/1177568.png" class="avatar-sm" alt="Filomena R." asp-append-version="true"/>
-                <div>
-                    <div class="d-flex align-items-center gap-2">
-                        <strong class="text-dark">Filomena R.</strong>
-                        <small class="text-muted">10:32 AM</small>
-                    </div>
-                    <p class="mt-2 mb-3 text-secondary">
-                        Buenos días a todos !!<br />
-                        El día de mañana me pueden ayudar con el siguiente timbrado por favor.<br />
-                        Semana 29, Catorcena 14.<br />
-                        Saludos y gracias !
-                    </p>
-
-                    <!-- Archivos Adjuntos -->
-                    <div class="bg-light p-3 rounded-3 d-flex gap-3 align-items-center border">
-                        <div class="d-flex align-items-center gap-2 bg-white p-2 rounded border">
-                            <i class="bi bi-file-earmark-image fs-4 text-primary"></i>
-                            <div>
-                                <small class="fw-bold d-block">Captura_timbrado.png</small>
-                                <small class="text-muted">Thumbnail</small>
-                            </div>
-                            <a href="#" class="ms-2 text-dark"><i class="bi bi-download"></i></a>
-                        </div>
-                        <div class="d-flex align-items-center gap-2 bg-white p-2 rounded border">
-                            <i class="bi bi-file-earmark-text fs-4 text-secondary"></i>
-                            <div>
-                                <small class="fw-bold d-block">Log_Error_nomina.txt</small>
-                            </div>
-                            <a href="#" class="ms-2 text-dark"><i class="bi bi-download"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <hr />
-
-            <!-- Mensaje Admin (Soporte) -->
-            <div class="d-flex gap-3 my-4 bg-light p-3 rounded-3 border-start border-4 border-primary">
-                <img src="~/images/1177568.png" class="avatar-sm" alt="Leonardo C." asp-append-version="true" />
-                <div>
-                    <div class="d-flex align-items-center gap-2">
-                        <strong class="text-dark">Leonardo C. (Admin)</strong>
-                        <small class="text-muted">10:56 AM</small>
-                    </div>
-                    <p class="mt-2 mb-0 text-secondary">
-                        Buenos días.<br />
-                        Ya se realizó el Timbrado semanal y catorcenal de la empresa Merkle.<br />
-                        Saludos.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Caja para agregar comentarios -->
-            <div class="mt-4 pt-3 border-top">
-                <label class="form-label fw-bold">Add Comment</label>
-                <textarea class="form-control mb-3" rows="3" placeholder="Escribir una nota interna..."></textarea>
-                <div class="d-flex justify-content-between align-items-center">
-                    <button class="btn btn-primary px-4 fw-bold rounded-pill">ENVIAR COMENTARIO</button>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="notaInterna" checked>
-                        <label class="form-check-label fw-bold text-muted" for="notaInterna">Nota Interna</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panel Lateral Derecho (Dropdown Limpio + Timeline + Colaboradores) -->
-    <div class="col-lg-4">
-
-        <!-- Split Button de Estado Limpio (Modificación 1 y 2) -->
-        <div class="card-custom p-3 mb-4">
-            <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center fw-bold" type="button" data-bs-toggle="dropdown">
-                    <span>ESTADO</span>
-                </button>
-                <ul class="dropdown-menu w-100 p-2 shadow-sm border-0">
-                    <li><a class="dropdown-item rounded mb-1 bg-success text-white fw-bold" href="#"><i class="bi bi-check-lg me-2"></i> Solucionado</a></li>
-                    <li><a class="dropdown-item rounded mb-1 bg-warning text-dark fw-bold" href="#"><i class="bi bi-clock me-2"></i> Pendiente</a></li>
-                    <li><a class="dropdown-item rounded bg-danger text-white fw-bold" href="#"><i class="bi bi-x-lg me-2"></i> Rechazado</a></li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Timeline y Quién está trabajando (Modificación 4) -->
-        <div class="card-custom p-4">
-            <h6 class="fw-bold mb-3">Timeline</h6>
-
-            <!-- Colaboradores trabajando en el ticket -->
-            <div class="mb-4">
-                <small class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 11px;">Quién está trabajando el ticket</small>
-                <div class="d-flex flex-column gap-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <img src="~/images/1177568.png" class="avatar-sm" alt="Filomena R." asp-append-version="true" />
-                        <span class="small fw-bold">Leonardo C. (Admin)</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <img src="~/images/1177568.png" class="avatar-sm" alt="Filomena R." asp-append-version="true" />
-                        <span class="small text-secondary">María G.</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <img src="~/images/1177568.png" class="avatar-sm" alt="Filomena R." asp-append-version="true" />
-                        <span class="small text-secondary">Carlos M.</span>
-                    </div>
-                </div>
-            </div>
-
-            <hr />
-
-            <!-- Historial -->
-            <div class="timeline mt-3">
-                <div class="timeline-item">
-                    <small class="fw-bold d-block">Asignado a:</small>
-                    <small class="text-muted">Leonardo Castro (Admin)</small>
-                </div>
-                <div class="timeline-item">
-                    <small class="fw-bold d-block">Ticket Creado</small>
-                    <small class="text-muted">10:32 AM</small>
-                </div>
-                <div class="timeline-item">
-                    <small class="fw-bold d-block">Ticket Asignado</small>
-                    <small class="text-muted">10:46 AM</small>
-                </div>
-                <div class="timeline-item">
-                    <small class="fw-bold d-block text-warning">Estado actualizado a: En Proceso</small>
-                    <small class="text-muted">10:56 AM</small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+        for (var i = 1; i < tr.length; i++) {
+            var rowText = tr[i].innerText.toLowerCase();
+            if (rowText.indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+</script>

@@ -1,0 +1,160 @@
+﻿@model SistemaTickets.Models.Ticket
+
+@{
+    Layout = "_LayoutUser";
+    ViewData["Title"] = $"Seguimiento Ticket #{Model.Id}";
+}
+
+<div class="container py-4">
+
+    <!-- BOTÓN REGRESAR Y ALERTA -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a asp-controller="Tickets" asp-action="Index" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Volver a mis tickets
+        </a>
+        <span class="text-muted small">ID de Ticket: <strong>#@Model.Id</strong></span>
+    </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-3" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Mensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+
+        <!-- COLUMNA IZQUIERDA: TARJETA DEL TICKET + CHAT DE COMENTARIOS -->
+        <div class="col-lg-8">
+
+            <!-- DATOS DEL TICKET -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-primary px-3 py-2 rounded-pill fs-6">@Model.Categoria</span>
+                    <span class="badge bg-@(Model.Estado == "Abierto" ? "danger" : Model.Estado == "En Proceso" ? "warning text-dark" : "success") fs-6 px-3 py-2 rounded-pill">
+                        @Model.Estado
+                    </span>
+                </div>
+
+                <h4 class="fw-bold text-dark mt-2">@Model.Titulo</h4>
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-calendar3 me-1"></i> Reportado el @Model.FechaCreacion.ToString("dd/MM/yyyy hh:mm tt")
+                </p>
+
+                <div class="p-3 bg-light rounded-3 border-start border-4 border-primary">
+                    <strong class="d-block text-secondary small text-uppercase mb-1">Detalle del problema original:</strong>
+                    <p class="mb-0 text-dark" style="white-space: pre-line;">@Model.Descripcion</p>
+                </div>
+            </div>
+
+            <!-- INTERFAZ DE COMENTARIOS / CHAT -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h5 class="fw-bold text-dark mb-4 d-flex align-items-center">
+                    <i class="bi bi-chat-left-dots-fill text-primary me-2"></i> Mensajes y Respuestas
+                    <span class="badge bg-light text-dark border ms-2 rounded-pill fs-6">@Model.Comentarios.Count</span>
+                </h5>
+
+                <!-- LISTA DE MENSAJES -->
+                <div class="chat-box mb-4" style="max-height: 450px; overflow-y: auto;">
+                    @if (Model.Comentarios != null && Model.Comentarios.Any())
+                    {
+                        foreach (var com in Model.Comentarios.OrderBy(c => c.Fecha))
+                        {
+                            // Identificamos si el mensaje viene de Sistemas o del propio usuario
+                            bool esSistemas = com.Autor != Model.UsuarioEmail;
+
+                            <div class="d-flex flex-column mb-3 @(esSistemas ? "align-items-start" : "align-items-end")">
+                                <div class="p-3 rounded-4 shadow-sm style-message @(esSistemas ? "bg-light text-dark border" : "bg-primary text-white")" style="max-width: 85%;">
+                                    <div class="d-flex justify-content-between align-items-center mb-1 gap-3">
+                                        <small class="fw-bold" style="font-size: 0.8rem;">
+                                            <i class="bi @(esSistemas ? "bi-headset" : "bi-person-circle") me-1"></i>
+                                            @(esSistemas ? $"{com.Autor} (Sistemas)" : "Tú")
+                                        </small>
+                                        <small class="opacity-75" style="font-size: 0.7rem;">
+                                            @com.Fecha.ToString("dd/MM/yyyy hh:mm tt")
+                                        </small>
+                                    </div>
+                                    <p class="mb-0 small" style="white-space: pre-line;">@com.Texto</p>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 text-muted bg-light rounded-4">
+                            <i class="bi bi-chat-square-text fs-1 d-block mb-2 text-secondary"></i>
+                            <p class="mb-0">Aún no hay comentarios en este ticket.</p>
+                            <small>El personal de Sistemas te responderá por aquí.</small>
+                        </div>
+                    }
+                </div>
+
+                <!-- CAJA PARA ENVIAR MENSAJE -->
+                @if (Model.Estado != "Cerrado")
+                {
+                    <form asp-controller="Tickets" asp-action="GuardarComentarioUsuario" method="post" class="mt-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ticketId" value="@Model.Id" />
+
+                        <div class="mb-2">
+                            <textarea name="mensaje" class="form-control rounded-3" rows="3" placeholder="Escribe aquí tu respuesta o duda..." required></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                                <i class="bi bi-send-fill me-1"></i> Enviar Respuesta
+                            </button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <div class="alert alert-secondary text-center mb-0 rounded-3">
+                        <i class="bi bi-lock-fill me-1"></i> Este ticket está <strong>Cerrado</strong>. No se pueden agregar más comentarios.
+                    </div>
+                }
+            </div>
+
+        </div>
+
+        <!-- COLUMNA DERECHA: INFORMACIÓN LATERAL -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white sticky-top" style="top: 20px;">
+                <h6 class="fw-bold text-muted text-uppercase small mb-3">Información del Soporte</h6>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Técnico Asignado:</small>
+                    <div class="d-flex align-items-center mt-1">
+                        <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-circle me-2">
+                            <i class="bi bi-person-badge fs-5"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-dark">
+                                @(string.IsNullOrEmpty(Model.AsignadoA) ? "Pendiente por asignar" : Model.AsignadoA)
+                            </strong>
+                            <small class="text-muted">Equipo de TI</small>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Prioridad:</small>
+                    <span class="badge bg-@(Model.Prioridad == "Alta" ? "danger" : Model.Prioridad == "Media" ? "warning text-dark" : "secondary") mt-1">
+                        @Model.Prioridad
+                    </span>
+                </div>
+
+                <div>
+                    <small class="text-muted d-block">Participantes activos:</small>
+                    <span class="fw-bold text-dark fs-5">
+                        @(Model.Comentarios != null ? Model.Comentarios.Select(c => c.Autor).Distinct().Count() : 1)
+                    </span>
+                    <span class="text-muted small">persona(s) en la charla</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -8,7 +8,8 @@ namespace SistemaTickets.Controllers
     [Authorize(Roles = "Admin")]
     public class HomeController : Controller
     {
-        // GET: Dashboard Admin (Muestra todos los tickets)
+        // GET: /Home/Index (ALL TICKETS)
+        [HttpGet]
         public IActionResult Index()
         {
             var todosLosTickets = TicketRepository.Tickets
@@ -18,7 +19,87 @@ namespace SistemaTickets.Controllers
             return View(todosLosTickets);
         }
 
-        // GET: Detalle y Gestión del Ticket
+        // GET: /Home/Pendientes
+        [HttpGet]
+        public IActionResult Pendientes()
+        {
+            var ticketsPendientes = TicketRepository.Tickets
+                .Where(t => t.Estado == "Abierto" || t.Estado == "En Proceso")
+                .OrderByDescending(t => t.FechaCreacion)
+                .ToList();
+
+            return View(ticketsPendientes);
+        }
+
+        // GET: /Home/Resueltos (RESOLVED TICKETS)
+        [HttpGet]
+        public IActionResult Resueltos()
+        {
+            var ticketsResueltos = TicketRepository.Tickets
+                .Where(t => t.Estado == "Resuelto" || t.Estado == "Cerrado")
+                .OrderByDescending(t => t.FechaCreacion)
+                .ToList();
+
+            return View(ticketsResueltos);
+        }
+
+        // GET: /Home/CrearTicket
+        [HttpGet]
+        public IActionResult CrearTicket()
+        {
+            return View();
+        }
+
+        // POST: /Home/CrearTicket
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CrearTicket(Ticket ticket)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(ticket);
+            }
+
+            ticket.Id = TicketRepository.Tickets.Count > 0 ? TicketRepository.Tickets.Max(t => t.Id) + 1 : 101;
+            ticket.FechaCreacion = DateTime.Now;
+            ticket.Estado = "Abierto";
+            ticket.UsuarioEmail = User.Identity?.Name ?? "Administrador";
+
+            TicketRepository.Tickets.Add(ticket);
+
+            TempData["Success"] = $"¡Ticket #{ticket.Id} creado correctamente por el Administrador!";
+            return RedirectToAction("Index");
+        }
+
+        // POST: Marcar como Resuelto de forma rápida
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarkAsResolved(int id)
+        {
+            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == id);
+            if (ticket != null)
+            {
+                ticket.Estado = "Resuelto";
+                ticket.Comentarios.Add(new Comentario
+                {
+                    Autor = User.Identity?.Name ?? "Administrador",
+                    Texto = "El ticket ha sido marcado como RESUELTO.",
+                    Fecha = DateTime.Now
+                });
+
+                TempData["Success"] = $"El ticket #{id} ha sido marcado como Resuelto correctamente.";
+            }
+
+            string returnUrl = Request.Headers["Referer"].ToString();
+            if (!string.IsNullOrEmpty(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        // GET: /Home/Details/101
         [HttpGet]
         public IActionResult Details(int id)
         {
@@ -28,7 +109,7 @@ namespace SistemaTickets.Controllers
             return View(ticket);
         }
 
-        // POST: Cambiar Estado o Asignación
+        // POST: Actualizar Estado / Asignación
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult UpdateStatus(int id, string nuevoEstado, string asignadoA)
@@ -41,7 +122,7 @@ namespace SistemaTickets.Controllers
                 {
                     ticket.AsignadoA = asignadoA;
                 }
-                TempData["Success"] = $"Ticket #{id} actualizado correctamente.";
+                TempData["Success"] = $"Ticket #{id} actualizado a '{nuevoEstado}'.";
             }
             return RedirectToAction("Details", new { id });
         }
@@ -62,38 +143,6 @@ namespace SistemaTickets.Controllers
                 });
             }
             return RedirectToAction("Details", new { id });
-        }
-
-        // GET: /Home/CrearTicket
-        [HttpGet]
-        public IActionResult CrearTicket()
-        {
-            return View();
-        }
-
-        // POST: /Home/CrearTicket
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult CrearTicket(Ticket ticket)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(ticket);
-            }
-
-            // Asignar ID dinámico y datos iniciales
-            ticket.Id = TicketRepository.Tickets.Count > 0 ? TicketRepository.Tickets.Max(t => t.Id) + 1 : 101;
-            ticket.FechaCreacion = DateTime.Now;
-            ticket.Estado = "Abierto";
-            ticket.UsuarioEmail = User.Identity?.Name ?? "Administrador";
-
-            // Agregar a la lista compartida
-            TicketRepository.Tickets.Add(ticket);
-
-            TempData["Success"] = $"¡Ticket #{ticket.Id} creado correctamente por el Administrador!";
-
-            // Redirige directamente al Dashboard general del Admin
-            return RedirectToAction("Index");
         }
     }
 }

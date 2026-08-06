@@ -73,6 +73,15 @@
                                     <span class="badge rounded-pill bg-primary">@item.Estado</span>
                                 </td>
                                 <td class="text-secondary small">@item.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+
+                                <td class="text-end pe-4">
+                                    <a asp-controller="Tickets"
+                                       asp-action="StatusTicketUser"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                        <i class="bi bi-eye-fill me-1"></i> Gestionar
+                                    </a>
+                                </td>
                             </tr>
                         }
                     }

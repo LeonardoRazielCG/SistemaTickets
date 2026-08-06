@@ -21,15 +21,26 @@
                 </div>
 
                 <hr class="border-secondary opacity-25" />
-                <ul class="nav nav-pills flex-column mt-3">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- All Tickets -->
                     <li class="nav-item">
-                        <a href="#" class="nav-link active"><i class="bi bi-card-checklist me-2"></i> All Tickets</a>
+                        <a class="nav-link" asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-collection me-1"></i> Todos los Tickets
+                        </a>
                     </li>
+
+                    <!-- Pending Tickets -->
                     <li class="nav-item">
-                        <a href="#" class="nav-link"><i class="bi bi-clock-history me-2"></i> Pending Tickets</a>
+                        <a class="nav-link" asp-controller="Home" asp-action="Pendientes">
+                            <i class="bi bi-clock-history me-1"></i> Pendientes
+                        </a>
                     </li>
+
+                    <!-- Resolved Tickets -->
                     <li class="nav-item">
-                        <a href="#" class="nav-link"><i class="bi bi-check2-circle me-2"></i> Resolved Tickets</a>
+                        <a class="nav-link" asp-controller="Home" asp-action="Resueltos">
+                            <i class="bi bi-check-circle me-1"></i> Resueltos
+                        </a>
                     </li>
                     <li class="nav-item mt-4">
                         <a href="#" class="nav-link"><i class="bi bi-gear me-2"></i> Configuration</a>
