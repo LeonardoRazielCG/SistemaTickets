@@ -1,12 +1,19 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using SistemaTickets.Models;
+using SistemaTickets.Data;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Aderir servicios al contenedor
 builder.Services.AddControllersWithViews();
+
+
+//REGISTRAR DBNCONTEXT PARA ENTITY FRAMEWORK Y SQL SERVER
+builder.Services.AddDbContext<ApplicationDbContex>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 // 1. REGISTRAR SERVICIO DE AUTENTICACIÓN POR COOKIES
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

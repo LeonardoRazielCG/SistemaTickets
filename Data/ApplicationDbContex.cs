@@ -9,6 +9,9 @@ namespace SistemaTickets.Data
         public ApplicationDbContex(DbContextOptions<ApplicationDbContex> options) 
             :base(options)
             { }
-            public DbSet<Ticket> Ticket { get; set; }
+
+        public DbSet<Usuario> Usuarios { get; set; }    
+        public DbSet<Ticket> Ticket { get; set; }
+        public DbSet<Comentario> Comentarios { get; set; }
     }
 }

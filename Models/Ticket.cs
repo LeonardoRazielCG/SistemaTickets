@@ -1,9 +1,14 @@
-﻿using System;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+using System;
 
 namespace SistemaTickets.Models
 {
+    [Table("Ticket")]
     public class Ticket
     {
+        [Key]
         public int Id { get; set; }
         public string Titulo { get; set; } = string.Empty;
         public string Categoria { get; set; } = string.Empty;
@@ -18,10 +23,5 @@ namespace SistemaTickets.Models
 
     }
 
-    public class Comentario
-    {
-        public string Autor { get; set; } = string.Empty;
-        public string Texto { get; set; } = string.Empty;
-        public DateTime Fecha { get; set; } = DateTime.Now;
-    }
+   
 }
