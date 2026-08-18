@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SistemaTickets.Data;
 using SistemaTickets.Models;
 using System.Security.Claims;
 
@@ -8,84 +10,104 @@ namespace SistemaTickets.Controllers
 {
     public class AccountController : Controller
     {
+        //Decalramos la referencia al DBContext para comunicarnos con la BD
+        private readonly ApplicationDbContex _context;
+
+        //inyectmso ApplicationDbContext mediante el constructor del controlador 
+        public AccountController(ApplicationDbContex context)
+        {
+            _context = context;
+        }
+
         // GET: /Account/Login
+        //Muestra la vista del formulario del inicio de sesion.
         [HttpGet]
         public IActionResult Login()
         {
             // Si el usuario ya está autenticado, lo mandamos al dashboard
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
-                return RedirectToAction("Index", "Home");
+                if (User.IsInRole("Admin"))
+                { 
+                    return RedirectToAction("Index", "Home");
+                }
+                return RedirectToAction("Index", "Usuario");
             }
             return View();
         }
 
         // POST: /Account/Login
+        //procesa los datos enviados desde el formulario de login
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            // Validar que las reglas del ViewModel (campos requeridos, etc.) se cumplan
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            // SIMULACIÓN DE VALIDACIÓN (Posteriormente podremos conectar la BD)
-            string userRole = "";
-            string userName = "";
+            // Normalizamos el correo ingresado eliminando espacios accidentales
+            string emailIngresado = model.Email.Trim().ToLower() ?? "";
+            string passwordIngresada = model.Password.Trim() ?? "";
 
-            if (model.Email == "admin@soporte.com" && model.Password == "Admin123")
+            /*consulta a sql server mediante LINQ y Entity Fraamework
+              buxca un usuario donde el correo coincida y el estatus sea 'Activo'*/
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(
+                u => u.Correo.ToLower() == emailIngresado
+                && u .Contrasena == passwordIngresada);
+
+            //Si no encuentra coincidencia en la BD
+            if (usuario == null)
             {
-                userRole = "Admin";
-                userName = "Leonardo Castro";
+                ModelState.AddModelError(string.Empty, "Correo o contraseña incorrecta");
+                return View();
             }
 
-            else if (model.Email == "usuario@cliente.com" && model.Password == "User123")
+            if (!string.Equals(usuario.Estatus, "Activo", StringComparison.OrdinalIgnoreCase))
             {
-                userRole = "User";
-                userName = "Don Chano";
-            }
-            
-            else
-            {
-                // Si las credenciales no coinciden con ninguno 
-                ModelState.AddModelError(string.Empty, "Usuario o contraseña Incorrecos");
+                ModelState.AddModelError(string.Empty, "El usuario se encuentra inactivo.");
                 return View(model);
             }
 
             //Aqui se van a crear las identidades Claims incluyendo el rol detectado
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.Email, model.Email),
-                new Claim(ClaimTypes.Role, userRole) // <--- aqui se debe de guardar si es Admin o es User
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                new Claim(ClaimTypes.Name, usuario.Nombre ?? usuario.Correo),
+                new Claim(ClaimTypes.Email, usuario.Correo),
+                new Claim(ClaimTypes.Role, usuario.Rol ?? "Usuario") // <-- Asigna el rol Admin o user registrado en el SQL
 
             };
 
+            //Crea la identidad asociada al esquema de autenticación por cookies
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var authPropierties = new AuthenticationProperties
+
+            var authProperties = new AuthenticationProperties
             {
-                IsPersistent = model.RememberMe,
+                IsPersistent = model.RememberMe, // Mantiene la cookie si se marcó "Recordar mi sesión"
                 ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
             };
 
+            // Iniciar sesión creando la Cookie
             await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity),
-                authPropierties);
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
 
-            if (userRole == "Admin")
+            // Redirección según el Rol extraído de SQL Server
+            if (string.Equals(usuario.Rol, "Admin", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction("Index", "Home");
             }
-            else
-            {
-                return RedirectToAction("Create","Tickets");
-            }
+
+            return RedirectToAction("Create", "Tickets");
         }
 
-        // POST: /Account/Logout
+        // GET: /Account/Logout
+        [HttpGet]
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
