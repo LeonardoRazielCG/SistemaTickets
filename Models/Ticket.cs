@@ -21,7 +21,10 @@ namespace SistemaTickets.Models
         public string? AsignadoA { get; set; } = "Sin asignar";
         public List<Comentario> Comentarios { get; set; } = new List<Comentario>();
 
+        public string UsuarioNombre { get; set; } = string.Empty;
+        public string UsuarioCorreo { get; set; } = string.Empty;
+
     }
 
-   
+    
 }
