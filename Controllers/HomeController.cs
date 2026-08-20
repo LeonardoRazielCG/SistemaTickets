@@ -1,44 +1,52 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SistemaTickets.Data;
 using SistemaTickets.Models;
+using System.Security.Claims;
 
 namespace SistemaTickets.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class HomeController : Controller
     {
-        // GET: /Home/Index (ALL TICKETS)
-        [HttpGet]
-        public IActionResult Index()
+        private readonly ApplicationDbContex _context;
+        public HomeController(ApplicationDbContex context)
         {
-            var todosLosTickets = TicketRepository.Tickets
+            _context = context;
+        }
+
+        // GET: /Home/Index (TODOS LOS TICKETS)
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            var todosLosTickets = await _context.Tickets
                 .OrderByDescending(t => t.FechaCreacion)
-                .ToList();
+                .ToListAsync();
 
             return View(todosLosTickets);
         }
 
         // GET: /Home/Pendientes
         [HttpGet]
-        public IActionResult Pendientes()
+        public async Task<IActionResult> Pendientes()
         {
-            var ticketsPendientes = TicketRepository.Tickets
+            var ticketsPendientes = await _context.Tickets
                 .Where(t => t.Estado == "Abierto" || t.Estado == "En Proceso")
                 .OrderByDescending(t => t.FechaCreacion)
-                .ToList();
+                .ToListAsync();
 
             return View(ticketsPendientes);
         }
 
-        // GET: /Home/Resueltos (RESOLVED TICKETS)
+        // GET: /Home/Resueltos 
         [HttpGet]
-        public IActionResult Resueltos()
+        public async Task<IActionResult> Resueltos()
         {
-            var ticketsResueltos = TicketRepository.Tickets
-                .Where(t => t.Estado == "Resuelto" || t.Estado == "Cerrado")
+            var ticketsResueltos = await _context.Tickets
+                .Where(t => t.Estado.ToLower() == "Resuelto" || t.Estado.ToLower() == "Cerrado")
                 .OrderByDescending(t => t.FechaCreacion)
-                .ToList();
+                .ToListAsync();
 
             return View(ticketsResueltos);
         }
@@ -53,39 +61,60 @@ namespace SistemaTickets.Controllers
         // POST: /Home/CrearTicket
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearTicket(Ticket ticket)
+        public async Task<IActionResult> CrearTicket(Ticket ticket)
         {
-            if (!ModelState.IsValid)
+            ModelState.Remove(nameof(Ticket.UsuarioNombre));
+            ModelState.Remove(nameof(Ticket.UsuarioCorreo));
+            ModelState.Remove(nameof(Ticket.UsuarioEmail));
+            ModelState.Remove(nameof(Ticket.FechaCreacion));
+            ModelState.Remove(nameof(Ticket.Estado));
+            ModelState.Remove(nameof(Ticket.AsignadoA));
+            ModelState.Remove(nameof(Ticket.Comentarios));
+
+            if (ModelState.IsValid)
             {
-                return View(ticket);
+                string adminNombre = User.Identity?.Name ?? "Administrador";
+                string adminCorreo = User.FindFirstValue(ClaimTypes.Email) ?? "admin@empresa.com";
+
+                ticket.UsuarioNombre = adminNombre;
+                ticket.UsuarioCorreo = adminCorreo;
+                ticket.UsuarioEmail = adminCorreo;
+                ticket.FechaCreacion = DateTime.Now;
+                ticket.Estado = "Abierto";
+
+                _context.Tickets.Add(ticket);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = $"Ticket #{ticket.Id} creado correctamente";
+                return RedirectToAction("Index");
             }
-
-            ticket.Id = TicketRepository.Tickets.Count > 0 ? TicketRepository.Tickets.Max(t => t.Id) + 1 : 101;
-            ticket.FechaCreacion = DateTime.Now;
-            ticket.Estado = "Abierto";
-            ticket.UsuarioEmail = User.Identity?.Name ?? "Administrador";
-
-            TicketRepository.Tickets.Add(ticket);
-
-            TempData["Success"] = $"¡Ticket #{ticket.Id} creado correctamente por el Administrador!";
-            return RedirectToAction("Index");
+            return View(ticket);
         }
 
         // POST: Marcar como Resuelto de forma rápida
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult MarkAsResolved(int id)
+        public async Task<IActionResult> MarkAsResolved(int id)
         {
-            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == id);
+            var ticket = await _context.Tickets
+                .Include(t => t.Comentarios)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
             if (ticket != null)
             {
                 ticket.Estado = "Resuelto";
-                ticket.Comentarios.Add(new Comentario
+
+                var comentario = new Comentario
                 {
+                    TicketId = id,
                     Autor = User.Identity?.Name ?? "Administrador",
                     Texto = "El ticket ha sido marcado como RESUELTO.",
                     Fecha = DateTime.Now
-                });
+                };
+
+                _context.Comentarios.Add(comentario);
+                _context.Entry(ticket).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
 
                 TempData["Success"] = $"El ticket #{id} ha sido marcado como Resuelto correctamente.";
             }
@@ -99,11 +128,14 @@ namespace SistemaTickets.Controllers
             return RedirectToAction("Index");
         }
 
-        // GET: /Home/Details/101
+        // GET: /Home/Details/1
         [HttpGet]
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == id);
+            var ticket = await _context.Tickets
+                .Include(t => t.Comentarios)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
             if (ticket == null) return NotFound();
 
             return View(ticket);
@@ -112,35 +144,50 @@ namespace SistemaTickets.Controllers
         // POST: Actualizar Estado / Asignación
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult UpdateStatus(int id, string nuevoEstado, string asignadoA)
+        public async Task<IActionResult> UpdateStatus(int id, string nuevoEstado, string asignadoA)
         {
-            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == id);
+            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
             if (ticket != null)
             {
-                ticket.Estado = nuevoEstado;
+                if (!string.IsNullOrEmpty(nuevoEstado))
+                {
+                    ticket.Estado = nuevoEstado;
+                }
+
                 if (!string.IsNullOrEmpty(asignadoA))
                 {
                     ticket.AsignadoA = asignadoA;
                 }
-                TempData["Success"] = $"Ticket #{id} actualizado a '{nuevoEstado}'.";
+
+                // Notificamos a Entity Framework que el objeto fue modificado explícitamente
+                _context.Entry(ticket).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = $"Ticket #{id} actualizado correctamente a '{nuevoEstado}'.";
             }
+
             return RedirectToAction("Details", new { id });
         }
 
         // POST: Agregar Comentario
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddComment(int id, string textoComentario)
+        public async Task<IActionResult> AddComment(int id, string textoComentario)
         {
-            var ticket = TicketRepository.Tickets.FirstOrDefault(t => t.Id == id);
+            var ticket = await _context.Tickets
+                .FirstOrDefaultAsync(t => t.Id == id);
             if (ticket != null && !string.IsNullOrWhiteSpace(textoComentario))
             {
-                ticket.Comentarios.Add(new Comentario
+                var comentario = new Comentario
                 {
+                    TicketId = id,
                     Autor = User.Identity?.Name ?? "Administrador",
                     Texto = textoComentario,
                     Fecha = DateTime.Now
-                });
+                };
+
+                _context.Comentarios.Add(comentario);
+                await _context.SaveChangesAsync();
             }
             return RedirectToAction("Details", new { id });
         }
