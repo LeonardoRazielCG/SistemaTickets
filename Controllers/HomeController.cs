@@ -149,6 +149,7 @@ namespace SistemaTickets.Controllers
         }
 
         // POST: Actualizar Estado / Asignación
+        // POST: Actualizar Estado / Asignación Múltiple
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, string nuevoEstado, string asignadoA)
@@ -161,16 +162,23 @@ namespace SistemaTickets.Controllers
                     ticket.Estado = nuevoEstado;
                 }
 
-                if (!string.IsNullOrEmpty(asignadoA))
+                if (!string.IsNullOrEmpty(asignadoA) && asignadoA != "Sin asignar")
                 {
-                    ticket.AsignadoA = asignadoA;
+                    // Si ya hay un encargado y es distinto, los combinamos (Atención Conjunta)
+                    if (!string.IsNullOrEmpty(ticket.AsignadoA) && ticket.AsignadoA != "Sin asignar" && !ticket.AsignadoA.Contains(asignadoA))
+                    {
+                        ticket.AsignadoA = $"{ticket.AsignadoA}, {asignadoA}";
+                    }
+                    else
+                    {
+                        ticket.AsignadoA = asignadoA;
+                    }
                 }
 
-                // Notificamos a Entity Framework que el objeto fue modificado explícitamente
                 _context.Entry(ticket).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
 
-                TempData["Success"] = $"Ticket #{id} actualizado correctamente a '{nuevoEstado}'.";
+                TempData["Success"] = $"Ticket #{id} actualizado correctamente.";
             }
 
             return RedirectToAction("Details", new { id });
@@ -242,7 +250,7 @@ namespace SistemaTickets.Controllers
         {
             if (foto != null && foto.Length > 0)
             {
-                // 1. Directorio destino
+                // 1. Directorio destino en wwwroot
                 string folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "perfiles");
 
                 if (!Directory.Exists(folderPath))
@@ -250,26 +258,44 @@ namespace SistemaTickets.Controllers
                     Directory.CreateDirectory(folderPath);
                 }
 
-                // 2. Nombre único del archivo
+                // 2. Generar nombre único
                 string fileName = $"{Guid.NewGuid()}_{Path.GetFileName(foto.FileName)}";
-
-                // 3. DECLARACIÓN DE filePath (debe ir antes de usarse en FileStream)
                 string filePath = Path.Combine(folderPath, fileName);
 
-                // 4. Guardar archivo en disco
+                // 3. Guardar archivo físicamente
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await foto.CopyToAsync(stream);
                 }
 
-                // 5. URL relativa para guardar en BD
+                // 4. URL relativa para SQL Server
                 string fotoUrl = $"/uploads/perfiles/{fileName}";
 
-                TempData["Success"] = "Foto de perfil guardada correctamente.";
+                // 5. Obtener el usuario autenticado e impactar en SQL Server
+                string correoUsuario = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+                var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Correo == correoUsuario || u.NombreUsuario == correoUsuario);
+
+                if (usuario != null)
+                {
+                    usuario.FotoPerfilUrl = fotoUrl;
+                    _context.Entry(usuario).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] = "Foto de perfil actualizada e impactada en la base de datos.";
+                }
+                else
+                {
+                    TempData["Error"] = "No se encontró el usuario activo en la base de datos.";
+                }
+            }
+            else
+            {
+                TempData["Error"] = "Por favor selecciona una imagen válida.";
             }
 
             return RedirectToAction("Configuracion");
         }
+
 
         // POST: /Home/AsignarAMi
         [HttpPost]
@@ -279,19 +305,38 @@ namespace SistemaTickets.Controllers
             var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
             if (ticket != null)
             {
-                // Toma el nombre del usuario autenticado en la sesión
-                string usuarioActual = User.Identity?.Name ?? "Administrador TI";
+                string miNombre = User.Identity?.Name ?? "Leonardo C."; // Toma el usuario autenticado
 
-                ticket.AsignadoA = usuarioActual;
-                ticket.Estado = "En Proceso"; // Cambia el estado automáticamente al tomarlo
+                if (string.IsNullOrEmpty(ticket.AsignadoA) || ticket.AsignadoA == "Sin asignar")
+                {
+                    ticket.AsignadoA = miNombre;
+                }
+                else if (!ticket.AsignadoA.Contains(miNombre))
+                {
+                    ticket.AsignadoA = $"{ticket.AsignadoA}, {miNombre}";
+                }
+
+                ticket.Estado = "En Proceso";
 
                 _context.Entry(ticket).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
 
-                TempData["Success"] = $"Te has asignado el ticket #{id} correctamente.";
+                TempData["Success"] = $"Te has sumado a la atención del ticket #{id}.";
             }
 
             return RedirectToAction("Details", new { id });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MisTickets()
+        {
+            string miNombre = User.Identity?.Name ?? "Leonardo C.";
+            var misTickets = await _context.Tickets
+                .Where(t => t.AsignadoA.Contains(miNombre))
+                .OrderByDescending(t => t.FechaCreacion)
+                .ToListAsync();
+
+            return View("Index", misTickets);//Reutiliza la vista principal
         }
     }
 }

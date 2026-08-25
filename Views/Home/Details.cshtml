@@ -88,34 +88,38 @@
 
                         <!-- Asignación / Lista Dinámica de Encargados (TI) -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Asignado a</label>
-                            <select name="asignadoA" class="form-select">
-                                <option value="Sin asignar">Sin asignar</option>
+                            <label class="form-label fw-bold small text-muted">Añadir Encargado de TI</label>
+                            <select name="asignadoA" class="form-select mb-2">
+                                <option value="Sin asignar">-- Seleccionar Técnico --</option>
                                 @if (ViewBag.Tecnicos != null)
                                 {
                                     foreach (var admin in (List<SistemaTickets.Models.Usuario>)ViewBag.Tecnicos)
                                     {
-                                        <option value="@admin.Nombre" selected="@(Model.AsignadoA == admin.Nombre ? "selected" : null)">
-                                            @admin.Nombre
-                                        </option>
+                                        <option value="@admin.Nombre">@admin.Nombre (@admin.Departamento)</option>
                                     }
                                 }
                             </select>
+
+                            <small class="text-primary d-block mb-2 fw-semibold">
+                                <i class="bi bi-people-fill me-1"></i> Atendiendo actualmente:
+                                <strong>@(string.IsNullOrEmpty(Model.AsignadoA) ? "Sin asignar" : Model.AsignadoA)</strong>
+                            </small>
                         </div>
 
-                        <form asp-controller="Home" asp-action="AsignarAMi" method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@Model.Id" />
-                            <button type="submit" class="btn btn-outline-primary fw-bold">
-                                <i class="bi bi-person-check me-1"></i> Asignarme a mí
-                            </button>
-                        </form>
-
-                        <div class="d-grid gap-2 mt-4">
+                        <div class="d-grid gap-2 mt-3">
                             <button type="submit" class="btn btn-success fw-bold rounded-pill">
                                 <i class="bi bi-check2-circle me-1"></i> Guardar Cambios
                             </button>
                         </div>
+                    </form>
+
+                    <!-- Botón para Sumarse Rápido -->
+                    <form asp-action="AsignarAMi" method="post" class="mt-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-outline-primary w-100 fw-bold rounded-pill">
+                            <i class="bi bi-person-plus-fill me-1"></i> Sumarme a este ticket
+                        </button>
                     </form>
                 </div>
             </div>
