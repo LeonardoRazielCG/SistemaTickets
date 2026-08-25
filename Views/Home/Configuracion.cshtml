@@ -1,0 +1,250 @@
+﻿@model IEnumerable<SistemaTickets.Models.Usuario>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Configuración del Sistema";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h3 class="fw-bold m-0">Centro de Configuración</h3>
+            <small class="text-muted">Administración general de usuarios, catálogos y parámetros del sistema</small>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <ul class="nav nav-pills mb-4 gap-2 bg-white p-2 rounded-4 shadow-sm" id="configTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill fw-bold" id="usuarios-tab" data-bs-toggle="pill" data-bs-target="#usuarios" type="button" role="tab">
+                <i class="bi bi-people me-2"></i>Gestión de Usuarios
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill fw-bold" id="catalogos-tab" data-bs-toggle="pill" data-bs-target="#catalogos" type="button" role="tab">
+                <i class="bi bi-tags me-2"></i>Catálogos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill fw-bold" id="smtp-tab" data-bs-toggle="pill" data-bs-target="#smtp" type="button" role="tab">
+                <i class="bi bi-envelope-at me-2"></i>Notificaciones SMTP
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill fw-bold" id="firma-tab" data-bs-toggle="pill" data-bs-target="#firma" type="button" role="tab">
+                <i class="bi bi-card-heading me-2"></i>Firma y Perfil Admin
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de las Pestañas -->
+    <div class="tab-content" id="configTabsContent">
+
+        <!-- 1. GESTIÓN DE USUARIOS -->
+        <div class="tab-pane fade show active" id="usuarios" role="tabpanel">
+            <div class="row g-4">
+
+                <!-- Columna Izquierda: Formulario Alta de Usuario -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-person-plus me-2 text-primary"></i>Nuevo Usuario</h5>
+                        <form asp-controller="Home" asp-action="CrearUsuario" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Número de Nómina</label>
+                                <input type="number" name="Nomina" class="form-control" placeholder="Ej. 1002" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nombre Completo</label>
+                                <input type="text" name="Nombre" class="form-control" placeholder="Ej. Carlos Mendoza" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Correo Electrónico</label>
+                                <input type="email" name="Correo" class="form-control" placeholder="usuario@empresa.com" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Departamento</label>
+                                <select name="Departamento" class="form-select" required>
+                                    <option value="Sistemas">Sistemas / TI</option>
+                                    <option value="Recursos Humanos">Recursos Humanos</option>
+                                    <option value="Contabilidad">Contabilidad</option>
+                                    <option value="Nóminas">Nóminas</option>
+                                    <option value="Operaciones">Operaciones</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Rol en el Sistema</label>
+                                <select name="Rol" class="form-select" required>
+                                    <option value="Usuario">Usuario Solicitante</option>
+                                    <option value="Admin">Administrador / TI</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill">
+                                Registrar Usuario
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Tabla Dinámica de Usuarios de BD -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                        <h5 class="fw-bold mb-3">Usuarios Registrados</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nómina</th>
+                                        <th>Usuario</th>
+                                        <th>Departamento</th>
+                                        <th>Rol</th>
+                                        <th>Estatus</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model != null && Model.Any())
+                                    {
+                                        @foreach (var u in Model)
+                                        {
+                                            <tr>
+                                                <td class="fw-bold text-secondary">#@u.Nomina</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        @if (!string.IsNullOrEmpty(u.FotoPerfilUrl))
+                                                        {
+                                                            <img src="@u.FotoPerfilUrl" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" />
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi bi-person-circle fs-4 text-secondary"></i>
+                                                        }
+                                                        <div>
+                                                            <div class="fw-bold">@u.Nombre</div>
+                                                            <small class="text-muted">@u.Correo</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>@u.Departamento</td>
+                                                <td>
+                                                    <span class="badge @(u.Rol == "Admin" ? "bg-primary" : "bg-secondary")">
+                                                        @u.Rol
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                        @u.Estatus
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-3">No hay usuarios registrados en la base de datos.</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 2. CATÁLOGOS DEL SISTEMA -->
+        <div class="tab-pane fade" id="catalogos" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                        <h5 class="fw-bold mb-3">Categorías de Tickets</h5>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" placeholder="Nueva categoría (Ej: Impresoras)">
+                            <button class="btn btn-primary fw-bold" type="button">Agregar</button>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                OLIN <button class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Sistema Tress <button class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Red / VPN <button class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. PARÁMETROS SMTP -->
+        <div class="tab-pane fade" id="smtp" role="tabpanel">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white col-lg-8">
+                <h5 class="fw-bold mb-3"><i class="bi bi-gear-wide-connected me-2 text-primary"></i>Configuración de Servidor de Correo (SMTP)</h5>
+                <form asp-controller="Home" asp-action="GuardarSMTP" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Servidor SMTP</label>
+                            <input type="text" name="SmtpServer" class="form-control" placeholder="smtp.office365.com o smtp.gmail.com" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Puerto</label>
+                            <input type="number" name="Port" class="form-control" placeholder="587" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Correo Emisor</label>
+                            <input type="email" name="SenderEmail" class="form-control" placeholder="soporte@empresa.com" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Contraseña / Password de Aplicación</label>
+                            <input type="password" name="SenderPassword" class="form-control" placeholder="••••••••••••" />
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary fw-bold rounded-pill px-4">Guardar Cambios</button>
+                        <button type="button" class="btn btn-outline-secondary fw-bold rounded-pill">Probar Conexión</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 4. FIRMA Y PERFIL DE ADMINISTRADOR -->
+        <div class="tab-pane fade" id="firma" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center">
+                        <h5 class="fw-bold mb-3">Foto de Perfil</h5>
+                        <div class="mb-3">
+                            <img src="/images/default-avatar.png" class="rounded-circle img-thumbnail shadow-sm" style="width: 130px; height: 130px; object-fit: cover;" id="previewFoto" />
+                        </div>
+                        <form asp-controller="Home" asp-action="ActualizarFotoPerfil" method="post" enctype="multipart/form-data">
+                            @Html.AntiForgeryToken()
+                            <input type="file" name="foto" class="form-control mb-3" accept="image/*" required />
+                            <button type="submit" class="btn btn-outline-primary fw-bold rounded-pill w-100">
+                                <i class="bi bi-upload me-1"></i> Subir Nueva Foto
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                        <h5 class="fw-bold mb-3">Firma Automática para Respuestas y Correos</h5>
+                        <form asp-controller="Home" asp-action="GuardarFirma" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Texto / Plantilla de Cierre</label>
+                                <textarea name="FirmaTexto" class="form-control" rows="5" placeholder="Atentamente,&#10;Departamento de Tecnologías de la Información&#10;Grupo ABG"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary fw-bold rounded-pill px-4">Guardar Firma</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

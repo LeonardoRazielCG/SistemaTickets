@@ -15,7 +15,7 @@
         <aside class="sidebar d-flex flex-column justify-content-between p-3">
             <div>
 
-                <<div class="text-center py-2 mb-2">
+                <div class="text-center py-2 mb-2">
                     <img src="~/images/ABGLOGO.png" alt="Logo Empresa" class="img-fluid mb-2" style="max-height: 50px; width: auto;" />
                     <h6 class="fw-bold text-white text-uppercase tracking-wider m-0" style="font-size: 0.85rem; letter-spacing: 1px;">Admin Dashboard</h6>
                 </div>
@@ -42,8 +42,12 @@
                             <i class="bi bi-check-circle me-1"></i> Resueltos
                         </a>
                     </li>
-                    <li class="nav-item mt-4">
-                        <a href="#" class="nav-link"><i class="bi bi-gear me-2"></i> Configuration</a>
+
+                    <!-- Configuracion-->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Configuracion">
+                            <i class="bi bi-gear me-2"></i> Configuración
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Home" asp-action="CrearTicket">

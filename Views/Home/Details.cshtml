@@ -61,37 +61,63 @@
             </div>
         </div>
 
-        <!-- Panel Derecho: Controles de Gestión (Asignar y Estado) -->
+        <!-- Panel Derecho: Controles de Gestión (Panel de Control) -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h5 class="fw-bold mb-3">Panel de Control</h5>
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
 
-                <form asp-action="UpdateStatus" method="post">
-                    <input type="hidden" name="id" value="@Model.Id" />
+                <!-- Encabezado con Fondo Azul Completo y Texto Blanco -->
+                <div class="card-header bg-primary text-white py-3 px-4 border-0">
+                    <h5 class="fw-bold m-0">Panel de Control</h5>
+                </div>
 
-                    <!-- Cambio de Estado -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">Estado del Ticket</label>
-                        <select name="nuevoEstado" class="form-select">
-                            <option value="Abierto" selected="@(Model.Estado == "Abierto")">Abierto</option>
-                            <option value="En Proceso" selected="@(Model.Estado == "En Proceso")">En Proceso</option>
-                            <option value="Resuelto" selected="@(Model.Estado == "Resuelto")">Resuelto</option>
-                            <option value="Cerrado" selected="@(Model.Estado == "Cerrado")">Cerrado</option>
-                        </select>
-                    </div>
+                <!-- Cuerpo de la Tarjeta con el Formulario -->
+                <div class="card-body p-4">
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
 
-                    <!-- Asignación / Tomar Ticket -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">Asignado a</label>
-                        <input type="text" name="asignadoA" class="form-control" value="@Model.AsignadoA" placeholder="Ej. Leonardo Castro" />
-                    </div>
+                        <!-- Cambio de Estado -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Estado del Ticket</label>
+                            <select name="nuevoEstado" class="form-select">
+                                <option value="Abierto" selected="@(Model.Estado == "Abierto")">Abierto</option>
+                                <option value="En Proceso" selected="@(Model.Estado == "En Proceso")">En Proceso</option>
+                                <option value="Resuelto" selected="@(Model.Estado == "Resuelto")">Resuelto</option>
+                                <option value="Cerrado" selected="@(Model.Estado == "Cerrado")">Cerrado</option>
+                            </select>
+                        </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-success fw-bold rounded-pill">
-                            <i class="bi bi-check2-circle me-1"></i> Guardar Cambios
-                        </button>
-                    </div>
-                </form>
+                        <!-- Asignación / Lista Dinámica de Encargados (TI) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Asignado a</label>
+                            <select name="asignadoA" class="form-select">
+                                <option value="Sin asignar">Sin asignar</option>
+                                @if (ViewBag.Tecnicos != null)
+                                {
+                                    foreach (var admin in (List<SistemaTickets.Models.Usuario>)ViewBag.Tecnicos)
+                                    {
+                                        <option value="@admin.Nombre" selected="@(Model.AsignadoA == admin.Nombre ? "selected" : null)">
+                                            @admin.Nombre
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <form asp-controller="Home" asp-action="AsignarAMi" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="btn btn-outline-primary fw-bold">
+                                <i class="bi bi-person-check me-1"></i> Asignarme a mí
+                            </button>
+                        </form>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success fw-bold rounded-pill">
+                                <i class="bi bi-check2-circle me-1"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
