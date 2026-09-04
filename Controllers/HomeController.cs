@@ -55,8 +55,9 @@ namespace SistemaTickets.Controllers
 
         // GET: /Home/CrearTicket
         [HttpGet]
-        public IActionResult CrearTicket()
+        public async Task<IActionResult> CrearTicket()
         {
+            ViewBag.Categorias = await _context.Categorias.OrderBy(c => c.Nombre).ToListAsync();
             return View();
         }
 
@@ -213,6 +214,16 @@ namespace SistemaTickets.Controllers
         {
             //Carga laa lista completa de los usuarios desde el SQL Server
             var usuarios = await _context.Usuarios.ToListAsync();
+
+            //Carga las categorias de la BD pra pestaña caatalogos
+            ViewBag.Categorias = await _context.Categorias.OrderBy(c => c.Nombre).ToListAsync();
+
+            //Obtiene el usuario autenticado para mostrr dtos del perfil
+            string correoUsuario = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+            var usuarioActual = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Correo == correoUsuario || u.NombreUsuario == correoUsuario);
+            ViewBag.UsuarioActual = usuarioActual;
+
             return View(usuarios);
         }
 
@@ -338,5 +349,53 @@ namespace SistemaTickets.Controllers
 
             return View("Index", misTickets);//Reutiliza la vista principal
         }
+
+        // POST: /Home/CrearCategoria
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CrearCategoria(string nombreCategoria, string descripcionCategoria)
+        {
+            if (!string.IsNullOrWhiteSpace(nombreCategoria))
+            {
+                var nuevaCategoria = new Categoria
+                {
+                    Nombre = nombreCategoria.Trim(),
+                    Descripcion = descripcionCategoria?.Trim() ?? string.Empty
+                };
+
+                _context.Categorias.Add(nuevaCategoria);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = $"Categoría '{nombreCategoria}' agregada correctamente.";
+            }
+            else
+            {
+                TempData["Error"] = "El nombre de la categoría no puede estar vacío.";
+            }
+
+            return RedirectToAction("Configuracion");
+        }
+
+        // Eliminar categoria
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarCategoria(int id)
+        {
+            var categoria = await _context.Categorias.FindAsync(id);
+            if(categoria !=null)
+            {
+                _context.Categorias.Remove(categoria);
+                await _context.SaveChangesAsync();
+                TempData["success"] = "se elimino correctamente";
+            }
+            else
+            {
+                TempData["Error"] = "No se encontro la categoria a eliminar";
+
+            }
+
+            return RedirectToAction("Configuracion");
+        }
+
     }
 }

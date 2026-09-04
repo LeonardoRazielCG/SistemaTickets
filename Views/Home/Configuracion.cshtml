@@ -3,6 +3,12 @@
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Configuración del Sistema";
+
+    // Extraer datos del usuario activo para la pestaña de Perfil
+    var usuarioActual = ViewBag.UsuarioActual as SistemaTickets.Models.Usuario;
+    string fotoPerfilPath = !string.IsNullOrEmpty(usuarioActual?.FotoPerfilUrl)
+        ? usuarioActual.FotoPerfilUrl
+        : null;
 }
 
 <div class="container-fluid py-4">
@@ -12,6 +18,22 @@
             <small class="text-muted">Administración general de usuarios, catálogos y parámetros del sistema</small>
         </div>
     </div>
+
+    <!-- Mensajes de Notificación TempData -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
     <!-- Navegación por Pestañas -->
     <ul class="nav nav-pills mb-4 gap-2 bg-white p-2 rounded-4 shadow-sm" id="configTabs" role="tablist">
@@ -153,27 +175,60 @@
             </div>
         </div>
 
-        <!-- 2. CATÁLOGOS DEL SISTEMA -->
+        <!-- 2. CATÁLOGOS DEL SISTEMA (Formulario Corregido para Crear Categoría) -->
         <div class="tab-pane fade" id="catalogos" role="tabpanel">
             <div class="row g-4">
                 <div class="col-md-6">
                     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                        <h5 class="fw-bold mb-3">Categorías de Tickets</h5>
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" placeholder="Nueva categoría (Ej: Impresoras)">
-                            <button class="btn btn-primary fw-bold" type="button">Agregar</button>
+                        <h5 class="fw-bold mb-3"><i class="bi bi-tags me-2 text-primary"></i>Categorías de Tickets</h5>
+
+                        <form asp-controller="Home" asp-action="CrearCategoria" method="post" class="mb-4">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Nombre de la Categoría</label>
+                                <input type="text" name="nombreCategoria" class="form-control" placeholder="Ej: Impresoras / Redes / SUA" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Descripción (Opcional)</label>
+                                <input type="text" name="descripcionCategoria" class="form-control" placeholder="Ej: Incidencias relacionadas con equipos de impresión" />
+                            </div>
+                            <button class="btn btn-primary fw-bold rounded-pill" type="submit">
+                                <i class="bi bi-plus-circle me-1"></i> Agregar Categoría
+                            </button>
+                        </form>
+
+                        <h6 class="fw-bold text-secondary mt-4">Categorías Existentes</h6>
+                        <hr />
+
+                        <div class="list-group list-group-flush">
+                            @if (ViewBag.Categorias != null)
+                            {
+                                foreach (var cat in (List<SistemaTickets.Models.Categoria>)ViewBag.Categorias)
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
+                                        <div>
+                                            <span class="fw-bold d-block text-dark">@cat.Nombre</span>
+                                            @if (!string.IsNullOrEmpty(cat.Descripcion))
+                                            {
+                                                <small class="text-muted d-block">@cat.Descripcion</small>
+                                            }
+                                        </div>
+
+                                        <!-- Formulario POST para invocar la acción de eliminar -->
+                                        <form asp-controller="Home" asp-action="EliminarCategoria" asp-route-id="@cat.Id" method="post" onsubmit="return confirm('¿Seguro que deseas eliminar la categoría @cat.Nombre?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                                <i class="bi bi-trash"></i> 
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted small">No hay categorías registradas.</p>
+                            }
                         </div>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                OLIN <button class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Sistema Tress <button class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Red / VPN <button class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button>
-                            </li>
-                        </ul>
                     </div>
                 </div>
             </div>
@@ -211,14 +266,23 @@
             </div>
         </div>
 
-        <!-- 4. FIRMA Y PERFIL DE ADMINISTRADOR -->
+        <!-- 4. FIRMA Y PERFIL DE ADMINISTRADOR (Visualización Dinámica de Foto) -->
         <div class="tab-pane fade" id="firma" role="tabpanel">
             <div class="row g-4">
                 <div class="col-lg-4">
                     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center">
                         <h5 class="fw-bold mb-3">Foto de Perfil</h5>
-                        <div class="mb-3">
-                            <img src="/images/default-avatar.png" class="rounded-circle img-thumbnail shadow-sm" style="width: 130px; height: 130px; object-fit: cover;" id="previewFoto" />
+                        <div class="mb-3 d-flex justify-content-center">
+                            @if (!string.IsNullOrEmpty(fotoPerfilPath))
+                            {
+                                <img src="@fotoPerfilPath" class="rounded-circle img-thumbnail shadow-sm" style="width: 130px; height: 130px; object-fit: cover;" id="previewFoto" alt="Foto de Perfil" />
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center shadow-sm border" style="width: 130px; height: 130px;">
+                                    <i class="bi bi-person-fill text-secondary display-4"></i>
+                                </div>
+                            }
                         </div>
                         <form asp-controller="Home" asp-action="ActualizarFotoPerfil" method="post" enctype="multipart/form-data">
                             @Html.AntiForgeryToken()

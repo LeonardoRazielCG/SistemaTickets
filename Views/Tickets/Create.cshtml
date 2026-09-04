@@ -28,11 +28,14 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-dark">Categoría / Área <span class="text-danger">*</span></label>
                             <select asp-for="Categoria" class="form-select" required>
-                                <option value="" selected disabled>Selecciona una opción...</option>
-                                <option value="OLIN">OLIN (Timbrados, Cancelación, Retimbrados, Accesos)</option>
-                                <option value="Tress">Sistema Tress</option>
-                                <option value="Kiosko">Kiosko (CURP, Actualizaciones)</option>
-                                <option value="Red / VPN">Red / VPN (Conexión y Acceso)</option>
+                                <option value="">Selecciona una opción...</option>
+                                @if (ViewBag.Categorias != null)
+                                {
+                                    foreach (var cat in (List<SistemaTickets.Models.Categoria>)ViewBag.Categorias)
+                                    {
+                                        <option value="@cat.Nombre">@cat.Nombre</option>
+                                    }
+                                }
                             </select>
                         </div>
 

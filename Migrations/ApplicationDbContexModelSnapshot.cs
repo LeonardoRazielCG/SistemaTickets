@@ -22,6 +22,27 @@ namespace SistemaTickets.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("SistemaTickets.Models.Categoria", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categorias");
+                });
+
             modelBuilder.Entity("SistemaTickets.Models.Comentario", b =>
                 {
                     b.Property<int>("Id")
@@ -85,7 +106,15 @@ namespace SistemaTickets.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UsuarioCorreo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("UsuarioEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UsuarioNombre")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -114,6 +143,9 @@ namespace SistemaTickets.Migrations
 
                     b.Property<string>("Estatus")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FotoPerfilUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Nombre")

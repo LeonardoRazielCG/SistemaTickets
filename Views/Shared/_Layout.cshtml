@@ -74,14 +74,25 @@
 
                
             </div>
-            <!-- Perfil en footer del sidebar -->
+            <!-- foto Perfil del usuario admin -->
+            <!-- parte inferior del Sidebar -->
             <div class="d-flex align-items-center gap-2 p-2 rounded bg-dark">
-                <img src="~/images/1177568.png" class="avatar-sm rounded-circle" alt="User" asp-append-version="true" />
-                <div class="lh-1">
-                    <small class="fw-bold d-block text-white">Leonardo C.</small>
-                    <small class="text-lg-end" style="font-size: 11px;">Admin</small>
+                @{
+                    var fotoClaim = User.FindFirst("FotoPerfilUrl")?.Value;
+                    var fotoRuta = !string.IsNullOrEmpty(fotoClaim) ? fotoClaim : "~/img/default-avatar.png";
+                    if (!fotoRuta.StartsWith("~") && !fotoRuta.StartsWith("/"))
+                    {
+                        fotoRuta = "~/" + fotoRuta;
+                    }
+                }
+                <img src="@Url.Content(fotoRuta)"
+                     class="rounded-circle"
+                     style="width: 38px; height: 38px; object-fit: cover;"
+                     onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=@(User.Identity?.Name)&background=random';" />
 
-              
+                <div class="text-truncate">
+                    <span class="fw-bold d-block text-light small mb-0">@User.Identity?.Name</span>
+                    <small class="text-light" style="font-size: 0.75rem;">Admin</small>
                 </div>
             </div>
         </aside>

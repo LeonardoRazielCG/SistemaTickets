@@ -19,6 +19,6 @@ namespace SistemaTickets.Models
         public string Estatus { get; set; } = "Activo";
         public string Rol { get; set; } = "Usuario";
 
-        public string? FotoPerfilUrl { get; set; }
+       public string? FotoPerfilUrl { get; set; }
     }
 }

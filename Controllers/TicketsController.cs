@@ -48,8 +48,12 @@ namespace SistemaTickets.Controllers
 
         // GET: /Tickets/Create
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            ViewBag.Categorias = await _context.Categorias
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
+
             return View();
         }
 
@@ -81,6 +85,12 @@ namespace SistemaTickets.Controllers
                 TempData["Success"] = $"¡Ticket #{model.Id} enviado correctamente!";
                 return RedirectToAction("Index");
             }
+
+            //Si falla la validacion
+
+            ViewBag.Categorias = await _context.Categorias
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
 
             return View(model);
         }
@@ -142,6 +152,95 @@ namespace SistemaTickets.Controllers
 
             // Recargamos la misma vista para mostrar el comentario recién publicado
             return RedirectToAction("StatusTicketUser", new { id = ticketId });
+        }
+
+        //GET: /Tickets/ConfiguracionUser
+        [HttpGet]
+        public IActionResult ConfiguracionUser()
+        {
+            // obtener el id del usuario
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if(string.IsNullOrEmpty(userIdClaim))
+            {
+                return RedirectToAction("Login", "Accounr");
+            }
+
+            //busca el usuario en la base de datos
+            int userId = int.Parse(userIdClaim);
+            var usuario = _context.Usuarios.FirstOrDefault(u => u.Id == userId);
+
+            if (usuario == null)
+            {
+                return NotFound();
+            }
+
+            return View(usuario);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ConfiguracionUser(Usuario model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            TempData["SuccessMessage"] = "Perfil actualizado correctamente.";
+            return RedirectToAction(nameof(ConfiguracionUser));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ActualizarPerfilUser(string nombre, string departamento, string? nuevaPassword, IFormFile? foto)
+        {
+            // 1. Obtener ID del usuario actual
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return RedirectToAction("Login", "Account");
+
+            int userId = int.Parse(userIdClaim);
+            var usuario = await _context.Usuarios.FindAsync(userId);
+
+            if (usuario == null) return NotFound();
+
+            try
+            {
+                // 2. Actualizar datos básicos
+                usuario.Nombre = nombre;
+               
+
+                // 3. Procesar foto si subió una
+                if (foto != null && foto.Length > 0)
+                {
+                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(foto.FileName);
+                    string uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/perfiles", fileName);
+
+                    using (var stream = new FileStream(uploadPath, FileMode.Create))
+                    {
+                        await foto.CopyToAsync(stream);
+                    }
+
+                    usuario.FotoPerfilUrl = "/uploads/perfiles/" + fileName;
+                }
+
+                // 4. Actualizar contraseña si ingresó una nueva
+                if (!string.IsNullOrWhiteSpace(nuevaPassword))
+                {
+                    usuario.Contrasena = nuevaPassword;
+                }
+
+                _context.Update(usuario);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Tu perfil ha sido actualizado correctamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Ocurrió un error al actualizar los datos: " + ex.Message;
+            }
+
+            return RedirectToAction("ConfiguracionUser");
         }
     }
 }
