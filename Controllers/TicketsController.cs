@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaTickets.Data;
@@ -164,10 +165,11 @@ namespace SistemaTickets.Controllers
             int userId = int.Parse(userIdClaim);
             var usuario = await _context.Usuarios.FindAsync(userId);
 
-            if (usuario != null)
+            if (usuario != null) 
             {
                 ViewBag.FotoPerfil = usuario.FotoPerfilUrl;
                 ViewBag.Departamento = usuario.Departamento;
+                ViewBag.Nombre = usuario.Nombre;
             }
 
             return View();
@@ -203,7 +205,7 @@ namespace SistemaTickets.Controllers
             {
                 // 2. Actualizar datos básicos
                 usuario.Nombre = nombre;
-               
+                usuario.Departamento = departamento;
 
                 // 3. Procesar foto si subió una
                 if (foto != null && foto.Length > 0)
@@ -227,6 +229,19 @@ namespace SistemaTickets.Controllers
 
                 _context.Update(usuario);
                 await _context.SaveChangesAsync();
+
+                // --- ACTUALIZAR LA SESIÓN EN CALIENTE ---
+                var claims = new List<System.Security.Claims.Claim>
+        {
+                     new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                     new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, usuario.Nombre),
+                     new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, usuario.Correo ?? "")
+        };
+
+                var claimsIdentity = new System.Security.Claims.ClaimsIdentity(claims, Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
+
+                await HttpContext.SignInAsync(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme, new System.Security.Claims.ClaimsPrincipal(claimsIdentity));
+                // ----------------------------------------
 
                 TempData["Success"] = "Tu perfil ha sido actualizado correctamente.";
             }
