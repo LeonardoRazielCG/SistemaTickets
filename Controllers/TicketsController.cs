@@ -154,28 +154,23 @@ namespace SistemaTickets.Controllers
             return RedirectToAction("StatusTicketUser", new { id = ticketId });
         }
 
-        //GET: /Tickets/ConfiguracionUser
+        // GET: /Tickets/ConfiguracionUser
         [HttpGet]
-        public IActionResult ConfiguracionUser()
+        public async Task<IActionResult> ConfiguracionUser()
         {
-            // obtener el id del usuario
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return RedirectToAction("Login", "Account");
 
-            if(string.IsNullOrEmpty(userIdClaim))
-            {
-                return RedirectToAction("Login", "Accounr");
-            }
-
-            //busca el usuario en la base de datos
             int userId = int.Parse(userIdClaim);
-            var usuario = _context.Usuarios.FirstOrDefault(u => u.Id == userId);
+            var usuario = await _context.Usuarios.FindAsync(userId);
 
-            if (usuario == null)
+            if (usuario != null)
             {
-                return NotFound();
+                ViewBag.FotoPerfil = usuario.FotoPerfilUrl;
+                ViewBag.Departamento = usuario.Departamento;
             }
 
-            return View(usuario);
+            return View();
         }
 
         [HttpPost]

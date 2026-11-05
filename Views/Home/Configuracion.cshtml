@@ -4,7 +4,6 @@
     Layout = "_Layout";
     ViewData["Title"] = "Configuración del Sistema";
 
-    // Extraer datos del usuario activo para la pestaña de Perfil
     var usuarioActual = ViewBag.UsuarioActual as SistemaTickets.Models.Usuario;
     string fotoPerfilPath = !string.IsNullOrEmpty(usuarioActual?.FotoPerfilUrl)
         ? usuarioActual.FotoPerfilUrl
@@ -19,7 +18,7 @@
         </div>
     </div>
 
-    <!-- Mensajes de Notificación TempData -->
+    <!-- Mensajes TempData -->
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm" role="alert">
@@ -35,7 +34,7 @@
         </div>
     }
 
-    <!-- Navegación por Pestañas -->
+    <!-- Pestañas -->
     <ul class="nav nav-pills mb-4 gap-2 bg-white p-2 rounded-4 shadow-sm" id="configTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active rounded-pill fw-bold" id="usuarios-tab" data-bs-toggle="pill" data-bs-target="#usuarios" type="button" role="tab">
@@ -59,18 +58,14 @@
         </li>
     </ul>
 
-    <!-- Contenido de las Pestañas -->
     <div class="tab-content" id="configTabsContent">
-
         <!-- 1. GESTIÓN DE USUARIOS -->
         <div class="tab-pane fade show active" id="usuarios" role="tabpanel">
             <div class="row g-4">
-
-                <!-- Columna Izquierda: Formulario Alta de Usuario -->
                 <div class="col-lg-4">
                     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
                         <h5 class="fw-bold mb-3"><i class="bi bi-person-plus me-2 text-primary"></i>Nuevo Usuario</h5>
-                        <form asp-controller="Home" asp-action="CrearUsuario" method="post">
+                        <form asp-controller="Usuarios" asp-action="Crear" method="post">
                             @Html.AntiForgeryToken()
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Número de Nómina</label>
@@ -108,7 +103,6 @@
                     </div>
                 </div>
 
-                <!-- Columna Derecha: Tabla Dinámica de Usuarios de BD -->
                 <div class="col-lg-8">
                     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
                         <h5 class="fw-bold mb-3">Usuarios Registrados</h5>
@@ -121,6 +115,7 @@
                                         <th>Departamento</th>
                                         <th>Rol</th>
                                         <th>Estatus</th>
+                                        <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -153,9 +148,23 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                    <span class="badge @(u.Estatus == "Activo" ? "bg-success-subtle text-success border border-success-subtle" : "bg-danger-subtle text-danger border border-danger-subtle")">
                                                         @u.Estatus
                                                     </span>
+                                                </td>
+
+                                                <td class="text-end">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary border-0 btn-editar-user"
+                                                            data-id="@u.Id"
+                                                            data-nombre="@u.Nombre"
+                                                            data-departamento="@u.Departamento"
+                                                            data-rol="@u.Rol"
+                                                            data-nomina="@u.Nomina"
+                                                            data-correo="@u.Correo"
+                                                            data-estatus="@u.Estatus"
+                                                            title="Modificar usuario">
+                                                        <i class="bi bi-pencil"></i>
+                                                        </button>                                                    
                                                 </td>
                                             </tr>
                                         }
@@ -163,7 +172,7 @@
                                     else
                                     {
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-3">No hay usuarios registrados en la base de datos.</td>
+                                            <td colspan="6" class="text-center text-muted py-3">No hay usuarios registrados en la base de datos.</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -171,11 +180,10 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <!-- 2. CATÁLOGOS DEL SISTEMA (Formulario Corregido para Crear Categoría) -->
+        <!-- 2. CATÁLOGOS DEL SISTEMA -->
         <div class="tab-pane fade" id="catalogos" role="tabpanel">
             <div class="row g-4">
                 <div class="col-md-6">
@@ -201,7 +209,7 @@
                         <hr />
 
                         <div class="list-group list-group-flush">
-                            @if (ViewBag.Categorias != null)
+                            @if (ViewBag.Categorias != null && ((List<SistemaTickets.Models.Categoria>)ViewBag.Categorias).Any())
                             {
                                 foreach (var cat in (List<SistemaTickets.Models.Categoria>)ViewBag.Categorias)
                                 {
@@ -213,12 +221,10 @@
                                                 <small class="text-muted d-block">@cat.Descripcion</small>
                                             }
                                         </div>
-
-                                        <!-- Formulario POST para invocar la acción de eliminar -->
                                         <form asp-controller="Home" asp-action="EliminarCategoria" asp-route-id="@cat.Id" method="post" onsubmit="return confirm('¿Seguro que deseas eliminar la categoría @cat.Nombre?');">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn btn-sm btn-outline-danger border-0">
-                                                <i class="bi bi-trash"></i> 
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -266,7 +272,7 @@
             </div>
         </div>
 
-        <!-- 4. FIRMA Y PERFIL DE ADMINISTRADOR (Visualización Dinámica de Foto) -->
+        <!-- 4. FIRMA Y PERFIL DE ADMINISTRADOR -->
         <div class="tab-pane fade" id="firma" role="tabpanel">
             <div class="row g-4">
                 <div class="col-lg-4">
@@ -301,7 +307,7 @@
                             @Html.AntiForgeryToken()
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Texto / Plantilla de Cierre</label>
-                                <textarea name="FirmaTexto" class="form-control" rows="5" placeholder="Atentamente,&#10;Departamento de Tecnologías de la Información&#10;Grupo ABG"></textarea>
+                                <textarea name="FirmaTexto" class="form-control" rows="5" placeholder="Atentamente,&#10;Departamento de Tecnologías de la Información"></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary fw-bold rounded-pill px-4">Guardar Firma</button>
                         </form>
@@ -309,6 +315,205 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
+
+<!-- MODALES -->
+<!-- Modal Editar Usuario -->
+<div class="modal fade" id="modalGestionUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+
+            <div class="modal-header border-bottom-0 pb-0">
+                <div>
+                    <h5 class="modal-title fw-bold" id="gestionModalTitle">Gestionar Usuario</h5>
+                    <small class="text-muted">Modifica la información general, credenciales, estatus o elimina la cuenta.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body pt-3">
+                <!-- Pestañas Internas del Modal -->
+                <ul class="nav nav-tabs border-0 mb-3 gap-2" id="userModalTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold rounded-pill" id="tab-info-tab" data-bs-toggle="tab" data-bs-target="#tab-info" type="button" role="tab">
+                            <i class="bi bi-person-gear me-1"></i> Información General
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold rounded-pill text-warning" id="tab-security-tab" data-bs-toggle="tab" data-bs-target="#tab-security" type="button" role="tab">
+                            <i class="bi bi-key me-1"></i> Contraseña
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold rounded-pill text-danger" id="tab-danger-tab" data-bs-toggle="tab" data-bs-target="#tab-danger" type="button" role="tab">
+                            <i class="bi bi-shield-exclamation me-1"></i> Estado y Borrado
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="userModalTabsContent">
+                    <!-- PESTAÑA 1: DATOS GENERALES -->
+                    <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+                        <form asp-controller="Usuarios" asp-action="Editar" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" id="gestionUserId" name="id" />
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Número de Nómina</label>
+                                    <input type="number" id="gestionNomina" name="nomina" class="form-control" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Nombre Completo</label>
+                                    <input type="text" id="gestionNombre" name="nombre" class="form-control" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Correo Electrónico</label>
+                                    <input type="email" id="gestionCorreo" name="correo" class="form-control" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Departamento</label>
+                                    <select id="gestionDepartamento" name="departamento" class="form-select" required>
+                                        <option value="Sistemas">Sistemas / TI</option>
+                                        <option value="Recursos Humanos">Recursos Humanos</option>
+                                        <option value="Contabilidad">Contabilidad</option>
+                                        <option value="Nóminas">Nóminas</option>
+                                        <option value="Operaciones">Operaciones</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small">Rol en el Sistema</label>
+                                    <select id="gestionRol" name="rol" class="form-select" required>
+                                        <option value="Usuario">Usuario Solicitante</option>
+                                        <option value="Admin">Administrador / TI</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary rounded-pill fw-bold">Guardar Cambios</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- PESTAÑA 2: CONTRASEÑA -->
+                    <div class="tab-pane fade" id="tab-security" role="tabpanel">
+                        <form asp-controller="Usuarios" asp-action="CambiarContrasena" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" id="gestionUserIdPass" name="id" />
+
+                            <div class="p-3 bg-light rounded-4 mb-3">
+                                <label class="form-label fw-bold small">Nueva Contraseña</label>
+                                <input type="password" name="nuevaContrasena" class="form-control mb-2" placeholder="••••••••" required />
+                                <small class="text-muted">Asigna una nueva contraseña de acceso para este usuario.</small>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-warning rounded-pill fw-bold">Actualizar Contraseña</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- PESTAÑA 3: ESTATUS Y BORRADO -->
+                    <div class="tab-pane fade" id="tab-danger" role="tabpanel">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="p-3 border rounded-4 d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Estatus de la Cuenta</h6>
+                                        <small class="text-muted">Estatus actual: <strong id="gestionEstatusTexto" class="text-dark">Activo</strong></small>
+                                    </div>
+                                    <form asp-controller="Usuarios" asp-action="CambiarEstatus" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" id="gestionUserIdEstatus" name="id" />
+                                        <button type="submit" class="btn btn-outline-info rounded-pill fw-bold">
+                                            Cambiar Estatus
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="p-3 border border-danger-subtle bg-danger-subtle bg-opacity-10 rounded-4 d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="fw-bold text-danger mb-1">Eliminar Usuario</h6>
+                                        <small class="text-muted">Si el usuario tiene tickets asociados, la base de datos impedirá el borrado para proteger el historial.</small>
+                                    </div>
+                                    <form asp-controller="Usuarios" asp-action="EliminarDefinitivo" method="post" onsubmit="return confirm('¿Seguro que deseas eliminar permanentemente a este usuario?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" id="gestionUserIdDelete" name="id" />
+                                        <button type="submit" class="btn btn-danger rounded-pill fw-bold">
+                                            <i class="bi bi-trash me-1"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= JAVASCRIPT DE INTEGRACIÓN ================= -->
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Escuchar clics en todos los botones con la clase .btn-editar-user
+            document.querySelectorAll('.btn-editar-user').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    // Extraer los datos desde los atributos HTML data-*
+                    var id = this.getAttribute('data-id');
+                    var nombre = this.getAttribute('data-nombre');
+                    var departamento = this.getAttribute('data-departamento');
+                    var rol = this.getAttribute('data-rol');
+                    var nomina = this.getAttribute('data-nomina');
+                    var correo = this.getAttribute('data-correo');
+                    var estatus = this.getAttribute('data-estatus');
+
+                    // Asignar el ID a los formularios dentro del modal
+                    if (document.getElementById('gestionUserId')) document.getElementById('gestionUserId').value = id;
+                    if (document.getElementById('gestionUserIdPass')) document.getElementById('gestionUserIdPass').value = id;
+                    if (document.getElementById('gestionUserIdEstatus')) document.getElementById('gestionUserIdEstatus').value = id;
+                    if (document.getElementById('gestionUserIdDelete')) document.getElementById('gestionUserIdDelete').value = id;
+
+                    // Poblar campos de texto
+                    if (document.getElementById('gestionNomina')) document.getElementById('gestionNomina').value = nomina;
+                    if (document.getElementById('gestionNombre')) document.getElementById('gestionNombre').value = nombre;
+                    if (document.getElementById('gestionCorreo')) document.getElementById('gestionCorreo').value = correo;
+                    if (document.getElementById('gestionDepartamento')) document.getElementById('gestionDepartamento').value = departamento;
+                    if (document.getElementById('gestionRol')) document.getElementById('gestionRol').value = rol;
+
+                    // Textos del encabezado
+                    if (document.getElementById('gestionModalTitle')) document.getElementById('gestionModalTitle').innerText = 'Modificar: ' + nombre;
+                    if (document.getElementById('gestionEstatusTexto')) document.getElementById('gestionEstatusTexto').innerText = estatus;
+
+                    // Activar la primera pestaña ("Información General")
+                    var firstTabEl = document.getElementById('tab-info-tab');
+                    if (firstTabEl) {
+                        var firstTab = new bootstrap.Tab(firstTabEl);
+                        firstTab.show();
+                    }
+
+                    // Abrir el Modal de Bootstrap
+                    var modalEl = document.getElementById('modalGestionUsuario');
+                    if (modalEl) {
+                        var modal = new bootstrap.Modal(modalEl);
+                        modal.show();
+                    } else {
+                        console.error("No se encontró el elemento modal con ID 'modalGestionUsuario'");
+                    }
+                });
+            });
+        });
+    </script>
+}
